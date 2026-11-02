@@ -103,6 +103,9 @@ if 'DATABASE_URL' in os.environ and os.environ['DATABASE_URL']:
         )
     except ImportError:
         pass
+elif 'VERCEL' in os.environ:
+    # Ephemeral fallback for serverless read-only filesystem
+    DATABASES['default']['NAME'] = '/tmp/db.sqlite3'
 
 # Static files storage for WhiteNoise
 STORAGES = {

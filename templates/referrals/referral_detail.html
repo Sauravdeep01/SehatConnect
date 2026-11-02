@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+
+{% block title %}Referral {{ referral.referral_code }} — {{ t.app_name }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+  {% include 'partials/sidebar.html' %}
+
+  <div class="dashboard-content">
+    <div class="container-fluid max-w-900">
+      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 small">
+              <li class="breadcrumb-item"><a href="{% url 'referrals:referral_list' %}">Referrals</a></li>
+              <li class="breadcrumb-item active">{{ referral.referral_code }}</li>
+            </ol>
+          </nav>
+          <div class="d-flex align-items-center gap-2">
+            <h2 class="fw-bold text-dark mb-0">{{ referral.referral_code }}</h2>
+            <span class="badge {{ referral.status_badge_class }} fs-6">{{ referral.get_status_display.split.0 }}</span>
+            <span class="badge {{ referral.urgency_badge_class }} fs-6">{{ referral.get_urgency_display.split.0 }}</span>
+          </div>
+        </div>
+
+        <a href="{% url 'referrals:referral_list' %}" class="btn btn-outline-secondary">
+          <i class="bi bi-arrow-left me-1"></i> Back to Referrals
+        </a>
+      </div>
+
+      <!-- Lifecycle Progress Tracker -->
+      <div class="sc-card p-4 mb-4">
+        <h6 class="text-uppercase text-muted fw-bold small mb-3">Referral Handoff Lifecycle</h6>
+        <div class="position-relative m-2">
+          <div class="progress" style="height: 4px;">
+            <div class="progress-bar bg-primary" role="progressbar" 
+              {% if referral.status == 'pending' %}style="width: 20%;"
+              {% elif referral.status == 'accepted' %}style="width: 40%;"
+              {% elif referral.status == 'in_transit' %}style="width: 60%;"
+              {% elif referral.status == 'attended' %}style="width: 80%;"
+              {% elif referral.status == 'completed' %}style="width: 100%;"
+              {% else %}style="width: 20%;"{% endif %}>
+            </div>
+          </div>
+          <div class="d-flex justify-content-between mt-2 small fw-bold">
+            <span class="{% if referral.status in 'pending,accepted,in_transit,attended,completed' %}text-primary{% else %}text-muted{% endif %}">1. Initiated</span>
+            <span class="{% if referral.status in 'accepted,in_transit,attended,completed' %}text-primary{% else %}text-muted{% endif %}">2. Accepted</span>
+            <span class="{% if referral.status in 'in_transit,attended,completed' %}text-primary{% else %}text-muted{% endif %}">3. In Transit (108)</span>
+            <span class="{% if referral.status in 'attended,completed' %}text-primary{% else %}text-muted{% endif %}">4. Attended</span>
+            <span class="{% if referral.status == 'completed' %}text-success{% else %}text-muted{% endif %}">5. Completed</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Patient & Facility Handoff Card -->
+      <div class="sc-card p-4 mb-4">
+        <div class="row g-4 align-items-center">
+          <div class="col-md-6 border-end-md">
+            <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">
+              <i class="bi bi-person-fill text-primary me-1"></i> Patient Dossier
+            </h6>
+            <div class="d-flex align-items-center gap-3 mb-3">
+              <div class="rounded-circle bg-primary bg-opacity-10 text-primary p-3 fs-3">
+                <i class="bi bi-person-fill"></i>
+              </div>
+              <div>
+                <h5 class="fw-bold text-dark mb-0">{{ referral.patient.full_name }}</h5>
+                <div class="small text-muted">{{ referral.patient.gender_display }} / {{ referral.patient.age }}y | Blood: {{ referral.patient.blood_group }}</div>
+                <div class="small text-muted">Village: <strong>{{ referral.patient.village }}</strong>, {{ referral.patient.block }}</div>
+              </div>
+            </div>
+            <a href="{% url 'patients:patient_detail' referral.patient.pk %}" class="btn btn-sm btn-outline-primary">
+              <i class="bi bi-file-earmark-medical me-1"></i> Full Health Records
+            </a>
+          </div>
+
+          <div class="col-md-6">
+            <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">
+              <i class="bi bi-hospital text-danger me-1"></i> Facility Routing
+            </h6>
+            <div class="small mb-2">
+              <span class="text-muted d-block">Originating Facility:</span>
+              <strong>{{ referral.from_hospital.name|default:"Field Sub-centre / Home Visit" }}</strong>
+            </div>
+            <div class="small mb-2">
+              <span class="text-muted d-block">Destination Referral Hospital:</span>
+              <strong class="text-primary fs-6">{{ referral.to_hospital.name }}</strong>
+              <div class="text-muted">{{ referral.target_specialty.name|default:"General Medicine" }}</div>
+            </div>
+            <div class="small">
+              <span class="text-muted">Initiated by:</span>
+              <span>{{ referral.referred_by.get_full_name|default:referral.referred_by.username }} on {{ referral.created_at|date:"d M Y, H:i" }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Clinical Information -->
+      <div class="sc-card p-4 mb-4">
+        <h5 class="fw-bold text-dark mb-3"><i class="bi bi-file-text text-primary me-2"></i> Clinical Reason & Assessment</h5>
+        <div class="mb-3">
+          <strong class="text-dark small d-block mb-1">Reason for Higher Centre Escalation:</strong>
+          <div class="p-3 bg-light rounded text-secondary">{{ referral.referral_reason }}</div>
+        </div>
+
+        <div class="mb-3">
+          <strong class="text-dark small d-block mb-1">Clinical Summary, Provisional Diagnosis & Vitals:</strong>
+          <div class="p-3 bg-light rounded text-secondary">{{ referral.clinical_summary|linebreaks }}</div>
+        </div>
+
+        {% if referral.transport_required %}
+          <div class="p-3 bg-danger bg-opacity-10 rounded border border-danger-subtle d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-ambulance text-danger fs-3"></i>
+              <div>
+                <strong class="text-danger d-block">Dial 108 Emergency Medical Transport</strong>
+                <span class="small text-muted">Ambulance Transit Status: <strong>{{ referral.get_transport_status_display }}</strong></span>
+              </div>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Receiving Hospital Action Card -->
+      {% if can_update %}
+        <div class="sc-card p-4 border-top border-4 border-success">
+          <h5 class="fw-bold text-dark mb-3">
+            <i class="bi bi-clipboard-check text-success me-2"></i> Receiving Centre Triage & Admission Notes
+          </h5>
+          <form action="{% url 'referrals:referral_update_status' referral.pk %}" method="POST">
+            {% csrf_token %}
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold">Update Referral Status</label>
+                {{ status_form.status }}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold">108 Ambulance Status</label>
+                {{ status_form.transport_status }}
+              </div>
+              <div class="col-12">
+                <label class="form-label small fw-semibold">Admission / Hospital Remarks (Ward Bed Allocated, Doctor Assigned)</label>
+                {{ status_form.hospital_remarks }}
+              </div>
+            </div>
+            <div class="text-end">
+              <button type="submit" class="btn btn-success fw-bold px-4">
+                <i class="bi bi-check-circle me-1"></i> Update Referral Case
+              </button>
+            </div>
+          </form>
+        </div>
+      {% elif referral.hospital_remarks %}
+        <div class="sc-card p-4">
+          <h6 class="fw-bold text-dark mb-2">Hospital Admission Remarks:</h6>
+          <div class="p-3 bg-light rounded text-dark">{{ referral.hospital_remarks }}</div>
+        </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+{% endblock %}

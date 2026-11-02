@@ -1,0 +1,371 @@
+/* ==========================================================================
+   SehatConnect — Rural Healthcare Access Platform Design System
+   Color Palette: Deep Trust Blue (#0b5ed7), Health Green (#198754), Slate Dark (#1e293b)
+   ========================================================================== */
+
+:root {
+  --sc-primary: #0b5ed7;
+  --sc-primary-dark: #084298;
+  --sc-primary-light: #e7f1ff;
+  --sc-secondary: #198754;
+  --sc-secondary-dark: #0f5132;
+  --sc-secondary-light: #d1e7dd;
+  --sc-accent: #0dcaf0;
+  --sc-teal: #0fa47f;
+  --sc-warning: #ffc107;
+  --sc-danger: #dc3545;
+  --sc-dark: #0f172a;
+  --sc-slate: #334155;
+  --sc-muted: #64748b;
+  --sc-bg: #f8fafc;
+  --sc-card-bg: #ffffff;
+  --sc-border: #e2e8f0;
+  --sc-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --sc-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --sc-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+  --sc-radius: 12px;
+  --sc-radius-sm: 8px;
+  --sc-font: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+}
+
+body {
+  font-family: var(--sc-font);
+  background-color: var(--sc-bg);
+  color: var(--sc-dark);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ================= Top Emergency Hotline Bar ================= */
+.emergency-topbar {
+  background: linear-gradient(90deg, #b02a37, #dc3545);
+  color: #ffffff;
+  font-size: 0.825rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  padding: 6px 0;
+}
+.emergency-topbar a {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+/* ================= Navbar ================= */
+.sc-navbar {
+  background: #ffffff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+  border-bottom: 1px solid var(--sc-border);
+  padding: 0.75rem 0;
+}
+.sc-brand-badge {
+  background: var(--sc-primary-light);
+  color: var(--sc-primary);
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  margin-left: 6px;
+}
+.nav-link {
+  font-weight: 600;
+  color: var(--sc-slate);
+  padding: 0.5rem 0.85rem !important;
+  border-radius: var(--sc-radius-sm);
+  transition: all 0.2s ease;
+}
+.nav-link:hover, .nav-link.active {
+  color: var(--sc-primary) !important;
+  background-color: var(--sc-primary-light);
+}
+
+/* ================= Buttons ================= */
+.btn-sc-primary {
+  background-color: var(--sc-primary);
+  border-color: var(--sc-primary);
+  color: #ffffff;
+  font-weight: 600;
+  border-radius: var(--sc-radius-sm);
+  padding: 0.55rem 1.25rem;
+  transition: all 0.2s ease;
+}
+.btn-sc-primary:hover {
+  background-color: var(--sc-primary-dark);
+  border-color: var(--sc-primary-dark);
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: var(--sc-shadow-md);
+}
+
+.btn-sc-secondary {
+  background-color: var(--sc-secondary);
+  border-color: var(--sc-secondary);
+  color: #ffffff;
+  font-weight: 600;
+  border-radius: var(--sc-radius-sm);
+  padding: 0.55rem 1.25rem;
+}
+.btn-sc-secondary:hover {
+  background-color: var(--sc-secondary-dark);
+  border-color: var(--sc-secondary-dark);
+  color: #ffffff;
+}
+
+.btn-sc-outline-primary {
+  border: 1.5px solid var(--sc-primary);
+  color: var(--sc-primary);
+  background: transparent;
+  font-weight: 600;
+  border-radius: var(--sc-radius-sm);
+}
+.btn-sc-outline-primary:hover {
+  background-color: var(--sc-primary);
+  color: #ffffff;
+}
+
+/* ================= Hero Section ================= */
+.hero-wrapper {
+  background: linear-gradient(135deg, #0a3875 0%, #0b5ed7 50%, #0fa47f 100%);
+  color: #ffffff;
+  padding: 4.5rem 0 5rem 0;
+  position: relative;
+  overflow: hidden;
+}
+.hero-wrapper::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image: radial-gradient(circle at 80% 20%, rgba(255,255,255,0.12) 0%, transparent 40%);
+  pointer-events: none;
+}
+.hero-title {
+  font-size: 2.75rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.5px;
+}
+.hero-lead {
+  font-size: 1.2rem;
+  opacity: 0.92;
+  font-weight: 400;
+}
+.hero-card {
+  background: rgba(255, 255, 255, 0.98);
+  color: var(--sc-dark);
+  border-radius: var(--sc-radius);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(8px);
+}
+
+/* ================= Cards ================= */
+.sc-card {
+  background: var(--sc-card-bg);
+  border: 1px solid var(--sc-border);
+  border-radius: var(--sc-radius);
+  box-shadow: var(--sc-shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
+}
+.sc-card:hover {
+  box-shadow: var(--sc-shadow-md);
+}
+.sc-card-interactive:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--sc-shadow-lg);
+  border-color: #cbd5e1;
+}
+
+/* ================= Badges ================= */
+.badge-soft-primary { background-color: var(--sc-primary-light); color: var(--sc-primary); font-weight: 600; }
+.badge-soft-success { background-color: var(--sc-secondary-light); color: var(--sc-secondary-dark); font-weight: 600; }
+.badge-soft-warning { background-color: #fff3cd; color: #856404; font-weight: 600; }
+.badge-soft-danger { background-color: #f8d7da; color: #842029; font-weight: 600; }
+.badge-soft-info { background-color: #cff4fc; color: #055160; font-weight: 600; }
+.badge-soft-secondary { background-color: #e2e8f0; color: #475569; font-weight: 600; }
+
+.badge-pill-custom {
+  padding: 0.45em 0.85em;
+  border-radius: 50rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.2px;
+}
+
+/* ================= Sidebar Layout for Dashboards ================= */
+.dashboard-wrapper {
+  display: flex;
+  min-height: calc(100vh - 120px);
+}
+.dashboard-sidebar {
+  width: 260px;
+  background: #ffffff;
+  border-right: 1px solid var(--sc-border);
+  padding: 1.5rem 1rem;
+  flex-shrink: 0;
+}
+.dashboard-content {
+  flex-grow: 1;
+  padding: 2rem;
+  background-color: var(--sc-bg);
+}
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0.75rem 1rem;
+  color: var(--sc-slate);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.925rem;
+  border-radius: var(--sc-radius-sm);
+  margin-bottom: 4px;
+  transition: all 0.15s ease;
+}
+.sidebar-link i {
+  font-size: 1.2rem;
+  color: var(--sc-muted);
+}
+.sidebar-link:hover {
+  background-color: var(--sc-primary-light);
+  color: var(--sc-primary);
+}
+.sidebar-link:hover i {
+  color: var(--sc-primary);
+}
+.sidebar-link.active {
+  background-color: var(--sc-primary);
+  color: #ffffff;
+}
+.sidebar-link.active i {
+  color: #ffffff;
+}
+
+/* ================= Stat Metric Widgets ================= */
+.stat-widget {
+  padding: 1.5rem;
+  border-radius: var(--sc-radius);
+  background: #ffffff;
+  border: 1px solid var(--sc-border);
+  box-shadow: var(--sc-shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+.stat-widget-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+.stat-widget-value {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--sc-dark);
+  margin-bottom: 0.25rem;
+}
+.stat-widget-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--sc-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ================= Leaflet Map Styling ================= */
+#map {
+  height: 580px;
+  width: 100%;
+  border-radius: var(--sc-radius);
+  z-index: 10;
+}
+.map-popup-card {
+  padding: 6px;
+  max-width: 260px;
+}
+.map-popup-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--sc-primary);
+  margin-bottom: 4px;
+}
+.map-popup-badge {
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* ================= Printable OPD Slip Styling ================= */
+.print-slip-container {
+  max-width: 800px;
+  margin: 2rem auto;
+  background: #ffffff;
+  border: 2px dashed #94a3b8;
+  border-radius: 12px;
+  padding: 2.5rem;
+  position: relative;
+}
+.print-slip-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-30deg);
+  font-size: 5rem;
+  font-weight: 900;
+  color: rgba(11, 94, 215, 0.04);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.token-badge-large {
+  background: var(--sc-primary-light);
+  border: 2px solid var(--sc-primary);
+  color: var(--sc-primary);
+  font-size: 2.25rem;
+  font-weight: 900;
+  padding: 0.5rem 1.5rem;
+  border-radius: 12px;
+  display: inline-block;
+  line-height: 1;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .emergency-topbar, .sc-navbar, footer, .no-print, .btn, .dashboard-sidebar {
+    display: none !important;
+  }
+  .print-slip-container, .print-slip-container * {
+    visibility: visible;
+  }
+  .print-slip-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 1.5rem;
+    border: 1px solid #000;
+    box-shadow: none;
+  }
+}
+
+/* ================= Responsiveness ================= */
+@media (max-width: 991.98px) {
+  .dashboard-wrapper {
+    flex-direction: column;
+  }
+  .dashboard-sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--sc-border);
+  }
+  .dashboard-content {
+    padding: 1.25rem;
+  }
+  .hero-title {
+    font-size: 2rem;
+  }
+}

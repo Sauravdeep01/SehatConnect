@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+
+{% block title %}Patient Referrals Tracking — {{ t.app_name }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+  {% include 'partials/sidebar.html' %}
+
+  <div class="dashboard-content">
+    <div class="container-fluid">
+      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+          <h2 class="fw-bold text-dark mb-1">{{ t.nav_referrals }} (मरीज रेफरल सेवा)</h2>
+          <p class="text-muted small mb-0">Total Referrals in System: <strong>{{ total_count }}</strong></p>
+        </div>
+        {% if user.role == 'health_worker' or user.role == 'doctor' or user.is_superuser %}
+          <a href="{% url 'referrals:referral_create' %}" class="btn btn-outline-danger fw-bold shadow-sm">
+            <i class="bi bi-ambulance me-1"></i> {{ t.action_create_referral }}
+          </a>
+        {% endif %}
+      </div>
+
+      <!-- Filters -->
+      <div class="sc-card p-4 mb-4">
+        <form method="GET" class="row g-3 align-items-end">
+          <div class="col-md-5">
+            <label class="form-label small fw-semibold text-muted">Search / खोजें</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+              <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Referral code, patient name, hospital...">
+            </div>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small fw-semibold text-muted">Referral Status / स्थिति</label>
+            <select name="status" class="form-select">
+              <option value="">All Statuses</option>
+              {% for code, label in status_choices %}
+                <option value="{{ code }}" {% if status == code %}selected{% endif %}>{{ label.split.0 }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small fw-semibold text-muted">Urgency / प्राथमिकता</label>
+            <select name="urgency" class="form-select">
+              <option value="">All Urgencies</option>
+              {% for code, label in urgency_choices %}
+                <option value="{{ code }}" {% if urgency == code %}selected{% endif %}>{{ label.split.0 }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-sc-primary w-100 fw-bold">Filter</button>
+            <a href="{% url 'referrals:referral_list' %}" class="btn btn-outline-secondary">Reset</a>
+          </div>
+        </form>
+      </div>
+
+      <!-- Referrals Table -->
+      <div class="sc-card p-0 overflow-hidden mb-4">
+        {% if page_obj %}
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light small">
+                <tr>
+                  <th>Referral Code</th>
+                  <th>Patient Name & Village</th>
+                  <th>Originating Centre</th>
+                  <th>Destination Hospital</th>
+                  <th>Urgency</th>
+                  <th>108 Transit</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in page_obj %}
+                  <tr>
+                    <td>
+                      <span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-bold">{{ r.referral_code }}</span>
+                    </td>
+                    <td>
+                      <div class="fw-bold text-dark">{{ r.patient.full_name }}</div>
+                      <small class="text-muted">{{ r.patient.village }} | {{ r.patient.gender_display }} / {{ r.patient.age }}y</small>
+                    </td>
+                    <td>
+                      <div class="small fw-semibold">{{ r.from_hospital.name|default:"Field Sub-centre"|truncatechars:22 }}</div>
+                    </td>
+                    <td>
+                      <div class="small fw-bold text-primary">{{ r.to_hospital.name|truncatechars:26 }}</div>
+                      <small class="text-muted">{{ r.target_specialty.name|default:"General Medicine" }}</small>
+                    </td>
+                    <td>
+                      <span class="badge {{ r.urgency_badge_class }}">{{ r.get_urgency_display.split.0 }}</span>
+                    </td>
+                    <td>
+                      {% if r.transport_required %}
+                        <span class="badge bg-danger text-white"><i class="bi bi-ambulance me-1"></i> {{ r.get_transport_status_display }}</span>
+                      {% else %}
+                        <span class="text-muted small">Not required</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <span class="badge {{ r.status_badge_class }}">{{ r.get_status_display.split.0 }}</span>
+                    </td>
+                    <td>
+                      <small class="text-muted">{{ r.created_at|date:"d M, H:i" }}</small>
+                    </td>
+                    <td class="text-end">
+                      <a href="{% url 'referrals:referral_detail' r.pk %}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-eye me-1"></i> Details
+                      </a>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          {% if page_obj.has_other_pages %}
+            <div class="p-3 border-top d-flex justify-content-between align-items-center">
+              <span class="small text-muted">Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ total_count }}</span>
+              <ul class="pagination pagination-sm mb-0">
+                {% if page_obj.has_previous %}
+                  <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&status={{ status }}&urgency={{ urgency }}">Previous</a></li>
+                {% endif %}
+                <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+                {% if page_obj.has_next %}
+                  <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}&status={{ status }}&urgency={{ urgency }}">Next</a></li>
+                {% endif %}
+              </ul>
+            </div>
+          {% endif %}
+        {% else %}
+          <div class="text-center py-5 text-muted">
+            <i class="bi bi-arrow-left-right fs-1 opacity-50 mb-2"></i>
+            <h5>No referrals found</h5>
+            <p class="small">Try adjusting search parameters or create a new clinical referral.</p>
+            {% if user.role == 'health_worker' or user.role == 'doctor' or user.is_superuser %}
+              <a href="{% url 'referrals:referral_create' %}" class="btn btn-sc-primary">Initiate Referral</a>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

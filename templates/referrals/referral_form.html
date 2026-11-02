@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} — {{ t.app_name }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+  {% include 'partials/sidebar.html' %}
+
+  <div class="dashboard-content">
+    <div class="container-fluid max-w-800">
+      <div class="mb-4">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb mb-1 small">
+            <li class="breadcrumb-item"><a href="{% url 'referrals:referral_list' %}">Referrals</a></li>
+            <li class="breadcrumb-item active">{{ title }}</li>
+          </ol>
+        </nav>
+        <h2 class="fw-bold text-dark mb-1">{{ title }}</h2>
+        <p class="text-muted small">Escalate rural patients from field sub-centres and PHCs to Community Health Centres or District Hospitals.</p>
+      </div>
+
+      <div class="sc-card p-4 p-md-5">
+        <form method="POST">
+          {% csrf_token %}
+
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger py-2 small mb-4">
+              {% for err in form.non_field_errors %}{{ err }}{% endfor %}
+            </div>
+          {% endif %}
+
+          <div class="row g-3 mb-4">
+            <div class="col-12">
+              <label class="form-label fw-semibold small">1. Patient for Referral (मरीज चुनें) *</label>
+              {{ form.patient }}
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">2. Originating Centre (वर्तमान केंद्र)</label>
+              {{ form.from_hospital }}
+              <small class="text-muted">Primary Health Centre or Field Sub-centre</small>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">3. Destination Referral Hospital *</label>
+              {{ form.to_hospital }}
+              <small class="text-muted">Community Health Centre / District Hospital / Medical College</small>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">4. Target Clinical Department / Specialty</label>
+              {{ form.target_specialty }}
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">5. Urgency Priority Level *</label>
+              {{ form.urgency }}
+            </div>
+
+            <div class="col-12">
+              <label class="form-label fw-semibold small">6. Reason for Referral (रेफरल का कारण) *</label>
+              {{ form.referral_reason }}
+            </div>
+
+            <div class="col-12">
+              <label class="form-label fw-semibold small">7. Clinical Summary & Treatment Administered (संक्षिप्त जांच व उपचार) *</label>
+              {{ form.clinical_summary }}
+            </div>
+
+            <div class="col-12">
+              <div class="p-3 bg-danger bg-opacity-10 rounded-3 border border-danger-subtle">
+                <div class="form-check">
+                  {{ form.transport_required }}
+                  <label class="form-check-label fw-bold text-danger" for="id_transport_required">
+                    <i class="bi bi-ambulance me-1"></i> Dial 108 Emergency Medical Transport Required
+                  </label>
+                </div>
+                <small class="text-muted d-block mt-1">
+                  Checking this alerts the district emergency ambulance dispatch system to coordinate patient transit.
+                </small>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-end gap-2">
+            <a href="{% url 'referrals:referral_list' %}" class="btn btn-outline-secondary">{{ t.action_cancel }}</a>
+            <button type="submit" class="btn btn-danger px-4 fw-bold shadow-sm">
+              <i class="bi bi-send-check me-1"></i> Initiate Referral Case
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

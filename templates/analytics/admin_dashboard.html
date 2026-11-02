@@ -1,0 +1,330 @@
+{% extends 'base.html' %}
+
+{% block title %}District Healthcare Analytics & Admin — {{ t.app_name }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+  {% include 'partials/sidebar.html' %}
+
+  <div class="dashboard-content">
+    <div class="container-fluid">
+      <!-- Title -->
+      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+          <h2 class="fw-bold text-dark mb-1">Administrative & District Analytics Dashboard</h2>
+          <p class="text-muted small mb-0">Live monitoring of rural health coverage, OPD appointment flow, and hospital bed availability.</p>
+        </div>
+        <div class="d-flex gap-2">
+          <a href="{% url 'analytics:admin_users_list' %}" class="btn btn-outline-primary fw-semibold">
+            <i class="bi bi-people me-1"></i> Manage Users & Workers
+          </a>
+          <a href="{% url 'hospitals:hospital_create' %}" class="btn btn-sc-primary fw-semibold">
+            <i class="bi bi-plus-circle me-1"></i> Add Hospital Facility
+          </a>
+        </div>
+      </div>
+
+      <!-- Facility Verification Alert Banner (If Any Unverified) -->
+      {% if unverified_hospitals %}
+        <div class="alert alert-warning shadow-sm border mb-4">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+              <i class="bi bi-exclamation-triangle-fill fs-5 me-2 text-warning"></i>
+              <strong>{{ unverified_hospitals.count }} Health Facility Pending Verification!</strong>
+              <span class="small d-block text-muted">Facilities require administrative verification before appearing in active health worker searches.</span>
+            </div>
+            <div>
+              {% for uh in unverified_hospitals %}
+                <a href="{% url 'analytics:admin_verify_hospital' uh.pk %}" class="btn btn-sm btn-success fw-bold me-1">
+                  <i class="bi bi-patch-check me-1"></i> Verify {{ uh.name|truncatechars:20 }}
+                </a>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      {% endif %}
+
+      <!-- Top KPI Metric Cards -->
+      <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-xl-3">
+          <div class="stat-widget">
+            <div class="stat-widget-icon bg-primary-subtle text-primary">
+              <i class="bi bi-people-fill"></i>
+            </div>
+            <div class="stat-widget-value">{{ total_patients }}</div>
+            <div class="stat-widget-label">{{ t.stat_patients }}</div>
+          </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+          <div class="stat-widget">
+            <div class="stat-widget-icon bg-success-subtle text-success">
+              <i class="bi bi-calendar-check-fill"></i>
+            </div>
+            <div class="stat-widget-value">{{ total_appointments }}</div>
+            <div class="stat-widget-label">Total OPD Bookings</div>
+            <small class="text-success fw-bold">{{ today_appointments }} scheduled today</small>
+          </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+          <div class="stat-widget">
+            <div class="stat-widget-icon bg-danger-subtle text-danger">
+              <i class="bi bi-arrow-left-right"></i>
+            </div>
+            <div class="stat-widget-value">{{ total_referrals }}</div>
+            <div class="stat-widget-label">Specialist Referrals</div>
+            <small class="text-danger fw-bold">{{ emergency_referrals }} emergency active</small>
+          </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+          <div class="stat-widget">
+            <div class="stat-widget-icon bg-info-subtle text-info">
+              <i class="bi bi-hospital-fill"></i>
+            </div>
+            <div class="stat-widget-value">{{ verified_hospitals }} / {{ total_hospitals }}</div>
+            <div class="stat-widget-label">Verified Facilities</div>
+            <small class="text-primary fw-bold">{{ available_beds }} of {{ total_beds }} beds vacant ({{ bed_occupancy_rate }}% occ.)</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart.js Visual Analytics Row -->
+      <div class="row g-4 mb-4">
+        <!-- 1. Appointments Volume Trend (Line Chart) -->
+        <div class="col-lg-8">
+          <div class="sc-card p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="fw-bold text-dark mb-0">
+                <i class="bi bi-graph-up text-primary me-2"></i> OPD Appointment Volume Trend (Last 7 Days)
+              </h5>
+              <span class="badge bg-primary-subtle text-primary">Daily OPD Flow</span>
+            </div>
+            <div style="height: 280px; position: relative;">
+              <canvas id="appointmentsTrendChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Referral Status Breakdown (Donut Chart) -->
+        <div class="col-lg-4">
+          <div class="sc-card p-4 h-100">
+            <h5 class="fw-bold text-dark mb-3">
+              <i class="bi bi-pie-chart text-danger me-2"></i> Referral Status Breakdown
+            </h5>
+            <div style="height: 280px; position: relative;">
+              <canvas id="referralStatusChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Second Row of Charts -->
+      <div class="row g-4 mb-4">
+        <!-- 3. Facility Types Distribution (Bar Chart) -->
+        <div class="col-lg-6">
+          <div class="sc-card p-4 h-100">
+            <h5 class="fw-bold text-dark mb-3">
+              <i class="bi bi-bar-chart-fill text-success me-2"></i> Public Health Facilities by Tier
+            </h5>
+            <div style="height: 240px; position: relative;">
+              <canvas id="facilityTypeChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Patient Gender Demographics (Pie Chart) -->
+        <div class="col-lg-6">
+          <div class="sc-card p-4 h-100">
+            <h5 class="fw-bold text-dark mb-3">
+              <i class="bi bi-gender-ambiguous text-info me-2"></i> Registered Patient Demographics
+            </h5>
+            <div style="height: 240px; position: relative;">
+              <canvas id="genderDemographicsChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Appointments & Referrals Audit Tables -->
+      <div class="row g-4">
+        <div class="col-lg-6">
+          <div class="sc-card p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="fw-bold text-dark mb-0">Recent OPD Bookings</h5>
+              <a href="{% url 'appointments:appointment_list' %}" class="small text-decoration-none fw-bold">All Bookings</a>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0 small">
+                <thead class="table-light">
+                  <tr>
+                    <th>Slip #</th>
+                    <th>Patient</th>
+                    <th>Doctor & Hospital</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for a in recent_appointments %}
+                    <tr>
+                      <td><span class="badge bg-light text-dark border">#{{ a.token_number }}</span></td>
+                      <td>
+                        <div class="fw-bold">{{ a.patient.full_name }}</div>
+                        <small class="text-muted">{{ a.patient.village }}</small>
+                      </td>
+                      <td>
+                        <div>Dr. {{ a.doctor.get_full_name|default:a.doctor.username }}</div>
+                        <small class="text-muted">{{ a.hospital.name|truncatechars:18 }}</small>
+                      </td>
+                      <td><span class="badge {{ a.status_badge_class }}">{{ a.get_status_display.split.0 }}</span></td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-6">
+          <div class="sc-card p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="fw-bold text-dark mb-0">Critical & Emergency Referrals</h5>
+              <a href="{% url 'referrals:referral_list' %}" class="small text-decoration-none fw-bold">All Referrals</a>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0 small">
+                <thead class="table-light">
+                  <tr>
+                    <th>Code</th>
+                    <th>Patient</th>
+                    <th>Destination</th>
+                    <th>Urgency</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for r in recent_referrals %}
+                    <tr>
+                      <td><span class="fw-bold text-danger">{{ r.referral_code }}</span></td>
+                      <td>{{ r.patient.full_name }}</td>
+                      <td>{{ r.to_hospital.name|truncatechars:20 }}</td>
+                      <td><span class="badge {{ r.urgency_badge_class }}">{{ r.get_urgency_display.split.0 }}</span></td>
+                      <td><span class="badge {{ r.status_badge_class }}">{{ r.get_status_display.split.0 }}</span></td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. Appointments Volume Trend Line Chart
+    const ctxTrend = document.getElementById('appointmentsTrendChart').getContext('2d');
+    new Chart(ctxTrend, {
+        type: 'line',
+        data: {
+            labels: JSON.parse('{{ chart_date_labels|escapejs }}'),
+            datasets: [{
+                label: 'OPD Appointments',
+                data: JSON.parse('{{ chart_appointment_counts|escapejs }}'),
+                borderColor: '#0b5ed7',
+                backgroundColor: 'rgba(11, 94, 215, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.35,
+                pointBackgroundColor: '#0b5ed7',
+                pointRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { precision: 0 }
+                }
+            }
+        }
+    });
+
+    // 2. Referral Status Donut Chart
+    const ctxRef = document.getElementById('referralStatusChart').getContext('2d');
+    new Chart(ctxRef, {
+        type: 'doughnut',
+        data: {
+            labels: JSON.parse('{{ chart_ref_labels|escapejs }}'),
+            datasets: [{
+                data: JSON.parse('{{ chart_ref_data|escapejs }}'),
+                backgroundColor: ['#ffc107', '#0dcaf0', '#0b5ed7', '#198754', '#dc3545', '#6c757d'],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+
+    // 3. Facility Type Bar Chart
+    const ctxFac = document.getElementById('facilityTypeChart').getContext('2d');
+    new Chart(ctxFac, {
+        type: 'bar',
+        data: {
+            labels: JSON.parse('{{ chart_hosp_labels|escapejs }}'),
+            datasets: [{
+                label: 'Facilities',
+                data: JSON.parse('{{ chart_hosp_data|escapejs }}'),
+                backgroundColor: '#198754',
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, ticks: { precision: 0 } }
+            }
+        }
+    });
+
+    // 4. Gender Demographics Pie Chart
+    const ctxGender = document.getElementById('genderDemographicsChart').getContext('2d');
+    new Chart(ctxGender, {
+        type: 'pie',
+        data: {
+            labels: JSON.parse('{{ chart_gender_labels|escapejs }}'),
+            datasets: [{
+                data: JSON.parse('{{ chart_gender_data|escapejs }}'),
+                backgroundColor: ['#0b5ed7', '#d63384', '#6f42c1'],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

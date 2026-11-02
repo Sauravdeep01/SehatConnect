@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+
+{% block title %}Village Patient Registry — {{ t.app_name }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+  {% include 'partials/sidebar.html' %}
+
+  <div class="dashboard-content">
+    <div class="container-fluid">
+      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+          <h2 class="fw-bold text-dark mb-1">Village Patient Registry (मरीज पंजीयन)</h2>
+          <p class="text-muted small mb-0">Total Registered Patients: <strong>{{ total_count }}</strong></p>
+        </div>
+        {% if user.role == 'health_worker' or user.is_superuser %}
+          <a href="{% url 'patients:patient_create' %}" class="btn btn-sc-primary shadow-sm">
+            <i class="bi bi-person-plus-fill me-1"></i> {{ t.action_register_patient }}
+          </a>
+        {% endif %}
+      </div>
+
+      <!-- Search & Filters -->
+      <div class="sc-card p-4 mb-4">
+        <form method="GET" class="row g-3 align-items-end">
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold text-muted">Search Patient / खोजें</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+              <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Name, Patient ID, Phone, Village...">
+            </div>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small fw-semibold text-muted">Gender / लिंग</label>
+            <select name="gender" class="form-select">
+              <option value="">All Genders</option>
+              <option value="male" {% if gender == 'male' %}selected{% endif %}>Male</option>
+              <option value="female" {% if gender == 'female' %}selected{% endif %}>Female</option>
+              <option value="other" {% if gender == 'other' %}selected{% endif %}>Other</option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small fw-semibold text-muted">Blood Group</label>
+            <select name="blood_group" class="form-select">
+              <option value="">All Groups</option>
+              <option value="A+" {% if blood_group == 'A+' %}selected{% endif %}>A+</option>
+              <option value="B+" {% if blood_group == 'B+' %}selected{% endif %}>B+</option>
+              <option value="O+" {% if blood_group == 'O+' %}selected{% endif %}>O+</option>
+              <option value="AB+" {% if blood_group == 'AB+' %}selected{% endif %}>AB+</option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small fw-semibold text-muted">Village / गांव</label>
+            <input type="text" name="village" value="{{ village }}" class="form-control" placeholder="Village name">
+          </div>
+          <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-sc-primary w-100 fw-bold">Filter</button>
+            <a href="{% url 'patients:patient_list' %}" class="btn btn-outline-secondary">Reset</a>
+          </div>
+        </form>
+      </div>
+
+      <!-- Patients Table -->
+      <div class="sc-card p-0 overflow-hidden mb-4">
+        {% if page_obj %}
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light small">
+                <tr>
+                  <th>Patient ID</th>
+                  <th>Patient Name & Guardian</th>
+                  <th>Age / Sex</th>
+                  <th>Village & Block</th>
+                  <th>Contact</th>
+                  <th>Blood Group</th>
+                  <th>Latest Vitals</th>
+                  <th class="text-end" style="min-width: 180px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for p in page_obj %}
+                  <tr>
+                    <td>
+                      <span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-bold">{{ p.registration_id }}</span>
+                      {% if p.abha_id %}
+                        <div class="small text-muted" style="font-size: 0.7rem;">ABHA: {{ p.abha_id }}</div>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <div class="fw-bold text-dark">{{ p.full_name }}</div>
+                      {% if p.guardian_name %}
+                        <small class="text-muted">G: {{ p.guardian_name }}</small>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <span class="badge bg-light text-dark border">{{ p.gender_display }} / {{ p.age }}y</span>
+                    </td>
+                    <td>
+                      <div class="fw-semibold text-dark">{{ p.village }}</div>
+                      <small class="text-muted">{{ p.block }}, {{ p.district }}</small>
+                    </td>
+                    <td>
+                      <small class="text-dark">{{ p.phone|default:"N/A" }}</small>
+                    </td>
+                    <td>
+                      <span class="badge bg-secondary-subtle text-secondary">{{ p.blood_group }}</span>
+                    </td>
+                    <td>
+                      {% with v=p.latest_vitals %}
+                        {% if v %}
+                          <small class="d-block text-dark">BP: <strong>{{ v.bp_display }}</strong></small>
+                          <small class="text-muted">SpO2: {{ v.spo2|default:"-" }}% | Pulse: {{ v.pulse_rate|default:"-" }}</small>
+                        {% else %}
+                          <span class="text-muted small">No vitals logged</span>
+                        {% endif %}
+                      {% endwith %}
+                    </td>
+                    <td class="text-end">
+                      <div class="btn-group btn-group-sm">
+                        <a href="{% url 'patients:patient_detail' p.pk %}" class="btn btn-outline-primary" title="View Dossier">
+                          <i class="bi bi-eye-fill"></i>
+                        </a>
+                        {% if user.role == 'health_worker' or user.is_superuser %}
+                          <a href="{% url 'appointments:appointment_book' %}?patient_id={{ p.pk }}" class="btn btn-outline-success" title="Book OPD Appointment">
+                            <i class="bi bi-calendar-plus-fill"></i>
+                          </a>
+                          <a href="{% url 'referrals:referral_create' %}?patient_id={{ p.pk }}" class="btn btn-outline-danger" title="Create Referral">
+                            <i class="bi bi-ambulance"></i>
+                          </a>
+                          <a href="{% url 'patients:patient_update' p.pk %}" class="btn btn-outline-secondary" title="Edit Record">
+                            <i class="bi bi-pencil"></i>
+                          </a>
+                        {% endif %}
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          {% if page_obj.has_other_pages %}
+            <div class="p-3 border-top d-flex justify-content-between align-items-center">
+              <span class="small text-muted">Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ total_count }}</span>
+              <ul class="pagination pagination-sm mb-0">
+                {% if page_obj.has_previous %}
+                  <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&gender={{ gender }}&village={{ village }}&blood_group={{ blood_group }}">Previous</a></li>
+                {% endif %}
+                <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+                {% if page_obj.has_next %}
+                  <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}&gender={{ gender }}&village={{ village }}&blood_group={{ blood_group }}">Next</a></li>
+                {% endif %}
+              </ul>
+            </div>
+          {% endif %}
+        {% else %}
+          <div class="text-center py-5 text-muted">
+            <i class="bi bi-people fs-1 opacity-50 mb-2"></i>
+            <h5>No patients found</h5>
+            <p class="small">Try adjusting search parameters or register a new patient.</p>
+            {% if user.role == 'health_worker' or user.is_superuser %}
+              <a href="{% url 'patients:patient_create' %}" class="btn btn-sc-primary">Register Patient</a>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

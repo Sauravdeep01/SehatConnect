@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}Login — {{ t.app_name }}{% endblock %}
+
+{% block content %}
+<div class="py-5 bg-light min-vh-75 d-flex align-items-center">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-md-8 col-lg-5">
+        <div class="sc-card p-4 p-sm-5 bg-white shadow">
+          <div class="text-center mb-4">
+            <div class="d-inline-flex p-3 rounded-circle bg-primary bg-opacity-10 text-primary mb-2">
+              <i class="bi bi-shield-lock-fill fs-2"></i>
+            </div>
+            <h3 class="fw-bold text-dark mb-1">Healthcare Staff Login</h3>
+            <p class="small text-muted mb-0">For Community Health Workers, Doctors, and Administrators</p>
+          </div>
+
+          <!-- One-click Demo Credentials Picker -->
+          <div class="p-3 bg-light rounded-3 border mb-4">
+            <div class="small fw-bold text-muted mb-2 text-uppercase" style="font-size: 0.75rem;">
+              <i class="bi bi-magic me-1"></i> Quick Demo Logins (Click to Autofill):
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+              <button type="button" class="btn btn-sm btn-outline-primary fw-semibold" onclick="fillDemoLogin('worker')">
+                <i class="bi bi-person-hearts me-1"></i> ASHA Worker
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-success fw-semibold" onclick="fillDemoLogin('doctor')">
+                <i class="bi bi-hospital me-1"></i> Doctor / MO
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-dark fw-semibold" onclick="fillDemoLogin('admin')">
+                <i class="bi bi-shield-shaded me-1"></i> Admin / CMO
+              </button>
+            </div>
+          </div>
+
+          <form method="POST">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+              <div class="alert alert-danger py-2 small">
+                {% for err in form.non_field_errors %}{{ err }}{% endfor %}
+              </div>
+            {% endif %}
+
+            <div class="mb-3">
+              <label for="id_username" class="form-label fw-semibold text-secondary small">Username / यूजरनेम</label>
+              {{ form.username }}
+              {% if form.username.errors %}
+                <div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>
+              {% endif %}
+            </div>
+
+            <div class="mb-4">
+              <label for="id_password" class="form-label fw-semibold text-secondary small">Password / पासवर्ड</label>
+              {{ form.password }}
+              {% if form.password.errors %}
+                <div class="text-danger small mt-1">{{ form.password.errors.0 }}</div>
+              {% endif %}
+            </div>
+
+            <button type="submit" class="btn btn-sc-primary btn-lg w-100 fw-bold shadow-sm">
+              <i class="bi bi-box-arrow-in-right me-1"></i> Secure Login / प्रवेश करें
+            </button>
+          </form>
+
+          <div class="text-center mt-4 pt-3 border-top small text-muted">
+            <i class="bi bi-info-circle me-1"></i> Patients do not require accounts. Community health workers book OPD appointments on their behalf.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

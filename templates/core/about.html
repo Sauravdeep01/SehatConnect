@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block title %}About Us — {{ t.app_name }}{% endblock %}
+
+{% block content %}
+<div class="py-5 bg-primary bg-opacity-10 border-bottom">
+  <div class="container text-center max-w-700 py-3">
+    <h1 class="fw-bold text-dark mb-2">About SehatConnect</h1>
+    <p class="lead text-muted mb-0">Bridging the last-mile healthcare access divide in rural India through community empowerment.</p>
+  </div>
+</div>
+
+<div class="container py-5">
+  <div class="row g-5 align-items-center mb-5">
+    <div class="col-lg-6">
+      <h3 class="fw-bold text-primary mb-3">Our Core Philosophy</h3>
+      <p class="text-secondary leading-relaxed">
+        Over 65% of India's population lives in rural villages where public healthcare infrastructure (Sub-Centres, PHCs, and CHCs) exists, but is often difficult to navigate. Lack of smartphones, low digital literacy, and expensive travel to distantly located hospitals lead to overcrowding, late-stage diagnoses, and catastrophic out-of-pocket expenses.
+      </p>
+      <p class="text-secondary leading-relaxed">
+        <strong>SehatConnect</strong> flips the paradigm by empowering accredited community health workers (ASHAs and ANMs). Instead of expecting rural villagers to download apps or navigate portals, our platform equips frontline health workers with digital tools to register patients, reserve OPD appointments with specialist doctors, and arrange life-saving Dial 108 emergency referrals.
+      </p>
+    </div>
+    <div class="col-lg-6">
+      <div class="sc-card p-4 bg-white shadow-sm border-start border-4 border-primary">
+        <h5 class="fw-bold text-dark mb-3"><i class="bi bi-shield-check text-success me-2"></i> Key Operational Standards</h5>
+        <ul class="list-unstyled d-flex flex-column gap-3 mb-0 text-secondary">
+          <li class="d-flex align-items-start gap-2">
+            <i class="bi bi-check-circle-fill text-primary mt-1"></i>
+            <div><strong>Zero Digital Burden on Patients:</strong> Patients receive simple, tangible printed slips with QR codes verified at hospital OPD counters.</div>
+          </li>
+          <li class="d-flex align-items-start gap-2">
+            <i class="bi bi-check-circle-fill text-primary mt-1"></i>
+            <div><strong>Preventing Duplicate Queues:</strong> Strict database constraints ensure doctor slots are not overbooked, eliminating hours of uncertain waiting in hospital halls.</div>
+          </li>
+          <li class="d-flex align-items-start gap-2">
+            <i class="bi bi-check-circle-fill text-primary mt-1"></i>
+            <div><strong>Dial 108 Transit Integration:</strong> Emergency and obstetric referrals alert both the destination hospital and emergency ambulance dispatch simultaneously.</div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

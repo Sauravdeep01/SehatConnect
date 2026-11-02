@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} — {{ t.app_name }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+  {% include 'partials/sidebar.html' %}
+
+  <div class="dashboard-content">
+    <div class="container-fluid max-w-900">
+      <div class="mb-4">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb mb-1 small">
+            <li class="breadcrumb-item"><a href="{% url 'patients:patient_list' %}">Patients</a></li>
+            <li class="breadcrumb-item active">{{ title }}</li>
+          </ol>
+        </nav>
+        <h2 class="fw-bold text-dark mb-1">{{ title }}</h2>
+        <p class="text-muted small">Enter rural villager demographic, health history, and informed consent.</p>
+      </div>
+
+      <div class="sc-card p-4 p-md-5">
+        <form method="POST">
+          {% csrf_token %}
+          
+          <h5 class="fw-bold text-primary mb-3 border-bottom pb-2">
+            <i class="bi bi-person-badge me-2"></i> 1. Demographic Information (मरीज का विवरण)
+          </h5>
+          <div class="row g-3 mb-4">
+            <div class="col-md-8">
+              <label class="form-label fw-semibold small">{{ t.field_full_name }} *</label>
+              {{ form.full_name }}
+              {% if form.full_name.errors %}<div class="text-danger small">{{ form.full_name.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold small">{{ t.field_age }} *</label>
+              {{ form.age }}
+              {% if form.age.errors %}<div class="text-danger small">{{ form.age.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold small">{{ t.field_gender }} *</label>
+              {{ form.gender }}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold small">{{ t.field_guardian }}</label>
+              {{ form.guardian_name }}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold small">{{ t.field_phone }}</label>
+              {{ form.phone }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">Ayushman Bharat ABHA ID (Optional)</label>
+              {{ form.abha_id }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">{{ t.field_blood_group }}</label>
+              {{ form.blood_group }}
+            </div>
+          </div>
+
+          <h5 class="fw-bold text-primary mb-3 border-bottom pb-2">
+            <i class="bi bi-geo-alt me-2"></i> 2. Rural Residence Address (निवास पता)
+          </h5>
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">{{ t.field_village }} *</label>
+              {{ form.village }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">Gram Panchayat (ग्राम पंचायत)</label>
+              {{ form.panchayat }}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold small">{{ t.field_block }} *</label>
+              {{ form.block }}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold small">{{ t.field_district }} *</label>
+              {{ form.district }}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold small">Pincode</label>
+              {{ form.pincode }}
+            </div>
+          </div>
+
+          <h5 class="fw-bold text-primary mb-3 border-bottom pb-2">
+            <i class="bi bi-heart-pulse me-2"></i> 3. Clinical Background & Emergency Contacts
+          </h5>
+          <div class="row g-3 mb-4">
+            <div class="col-12">
+              <label class="form-label fw-semibold small">{{ t.field_chronic }}</label>
+              {{ form.chronic_conditions }}
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold small">{{ t.field_allergies }}</label>
+              {{ form.allergies }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">Emergency Contact Person</label>
+              {{ form.emergency_contact_name }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">Emergency Contact Mobile</label>
+              {{ form.emergency_contact_phone }}
+            </div>
+          </div>
+
+          <div class="p-3 bg-light rounded-3 border mb-4">
+            <div class="form-check">
+              {{ form.consent_given }}
+              <label class="form-check-label fw-bold text-dark" for="id_consent_given">
+                {{ t.field_consent }}
+              </label>
+            </div>
+            <small class="text-muted d-block mt-1">
+              The health worker certifies that the patient or legal guardian was explained the purpose of registration and verbal/written consent was granted.
+            </small>
+          </div>
+
+          <div class="d-flex justify-content-end gap-2">
+            <a href="{% url 'patients:patient_list' %}" class="btn btn-outline-secondary">{{ t.action_cancel }}</a>
+            <button type="submit" class="btn btn-sc-primary px-4 fw-bold shadow-sm">
+              <i class="bi bi-check-circle me-1"></i> {{ t.action_save }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

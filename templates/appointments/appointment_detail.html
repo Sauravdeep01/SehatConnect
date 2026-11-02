@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+
+{% block title %}Appointment {{ appointment.appointment_number }} — {{ t.app_name }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+  {% include 'partials/sidebar.html' %}
+
+  <div class="dashboard-content">
+    <div class="container-fluid max-w-900">
+      <!-- Header -->
+      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 small">
+              <li class="breadcrumb-item"><a href="{% url 'appointments:appointment_list' %}">Appointments</a></li>
+              <li class="breadcrumb-item active">{{ appointment.appointment_number }}</li>
+            </ol>
+          </nav>
+          <div class="d-flex align-items-center gap-2">
+            <h2 class="fw-bold text-dark mb-0">{{ appointment.appointment_number }}</h2>
+            <span class="badge {{ appointment.status_badge_class }} fs-6">{{ appointment.get_status_display.split.0 }}</span>
+          </div>
+        </div>
+
+        <div class="d-flex gap-2">
+          <a href="{% url 'appointments:appointment_print' appointment.pk %}" class="btn btn-outline-secondary" target="_blank">
+            <i class="bi bi-printer me-1"></i> Print OPD Slip
+          </a>
+          {% if can_consult and appointment.status != 'completed' %}
+            <a href="{% url 'appointments:appointment_consultation' appointment.pk %}" class="btn btn-sc-primary fw-bold">
+              <i class="bi bi-pencil-square me-1"></i> Consult & Prescribe
+            </a>
+          {% endif %}
+          {% if can_reschedule and appointment.status != 'completed' and appointment.status != 'cancelled' %}
+            <a href="{% url 'appointments:appointment_reschedule' appointment.pk %}" class="btn btn-outline-warning">
+              <i class="bi bi-calendar-event me-1"></i> Reschedule
+            </a>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Main Overview Card -->
+      <div class="sc-card p-4 mb-4">
+        <div class="row g-4 align-items-center">
+          <div class="col-md-8">
+            <div class="d-flex align-items-center gap-3 mb-3">
+              <div class="rounded-3 bg-primary text-white p-3 text-center" style="min-width: 90px;">
+                <div class="small text-uppercase">TOKEN</div>
+                <div class="fs-2 fw-bold lh-1">#{{ appointment.token_number }}</div>
+              </div>
+              <div>
+                <h4 class="fw-bold text-dark mb-1">{{ appointment.patient.full_name }}</h4>
+                <div class="small text-muted">
+                  {{ appointment.patient.gender_display }} / {{ appointment.patient.age }}y | Village: <strong>{{ appointment.patient.village }}</strong>
+                </div>
+                <a href="{% url 'patients:patient_detail' appointment.patient.pk %}" class="small text-primary text-decoration-none">
+                  <i class="bi bi-file-earmark-medical me-1"></i> View Full Patient File
+                </a>
+              </div>
+            </div>
+
+            <div class="row g-2 small border-top pt-3">
+              <div class="col-sm-6">
+                <span class="text-muted d-block">Healthcare Facility:</span>
+                <strong>{{ appointment.hospital.name }}</strong>
+              </div>
+              <div class="col-sm-6">
+                <span class="text-muted d-block">Consulting Doctor:</span>
+                <strong>Dr. {{ appointment.doctor.get_full_name|default:appointment.doctor.username }}</strong>
+                <small class="text-muted d-block">({{ appointment.doctor.doctor_profile.specialty.name }})</small>
+              </div>
+              <div class="col-sm-6">
+                <span class="text-muted d-block">Consultation Date:</span>
+                <strong>{{ appointment.appointment_date|date:"l, d M Y" }}</strong>
+              </div>
+              <div class="col-sm-6">
+                <span class="text-muted d-block">Time Slot & Room:</span>
+                <strong class="text-primary">{{ appointment.time_slot }}</strong>
+                <span class="badge bg-light text-dark border ms-1">{{ appointment.doctor.doctor_profile.room_number }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-4 text-center border-start-md">
+            {% if qr_code_base64 %}
+              <img src="data:image/png;base64,{{ qr_code_base64 }}" alt="QR Code" class="img-fluid border p-1 rounded" style="max-width: 140px;">
+              <small class="text-muted d-block mt-1">Verification QR Code</small>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Chief Complaints -->
+      <div class="sc-card p-4 mb-4">
+        <h5 class="fw-bold text-dark mb-2"><i class="bi bi-chat-left-text text-primary me-2"></i> Chief Complaints & Symptoms</h5>
+        <p class="text-secondary mb-0">{{ appointment.symptoms }}</p>
+      </div>
+
+      <!-- Doctor Notes & Prescription (If available) -->
+      {% if appointment.doctor_notes or appointment.prescription %}
+        <div class="sc-card p-4 mb-4 border-start border-4 border-success">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold text-success mb-0">
+              <i class="bi bi-file-earmark-medical-fill me-2"></i> Doctor's Clinical Diagnosis & Prescription
+            </h5>
+            {% if appointment.follow_up_date %}
+              <span class="badge bg-info-subtle text-info border">Follow-up: {{ appointment.follow_up_date|date:"d M Y" }}</span>
+            {% endif %}
+          </div>
+
+          {% if appointment.doctor_notes %}
+            <div class="mb-3">
+              <strong class="small text-muted d-block">Clinical Diagnosis:</strong>
+              <div class="p-3 bg-light rounded text-dark">{{ appointment.doctor_notes|linebreaks }}</div>
+            </div>
+          {% endif %}
+
+          {% if appointment.prescription %}
+            <div>
+              <strong class="small text-muted d-block">Prescribed Medication & Advice:</strong>
+              <div class="p-3 bg-success bg-opacity-10 rounded text-dark border border-success-subtle font-monospace">{{ appointment.prescription|linebreaks }}</div>
+            </div>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      <!-- Doctor Action Controls (Accept / Cancel) -->
+      {% if user == appointment.doctor or user.is_admin_user %}
+        <div class="sc-card p-4">
+          <h6 class="fw-bold text-dark mb-3">Status Management Controls</h6>
+          <div class="d-flex flex-wrap gap-2">
+            {% if appointment.status == 'pending' %}
+              <a href="{% url 'appointments:appointment_status_update' appointment.pk 'confirmed' %}" class="btn btn-success">
+                <i class="bi bi-check2-circle me-1"></i> Accept & Confirm Appointment
+              </a>
+            {% endif %}
+            {% if appointment.status != 'completed' and appointment.status != 'cancelled' %}
+              <a href="{% url 'appointments:appointment_status_update' appointment.pk 'cancelled' %}" class="btn btn-outline-danger" onclick="return confirm('Are you sure you want to cancel this appointment?')">
+                <i class="bi bi-x-circle me-1"></i> Cancel Appointment
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+{% endblock %}

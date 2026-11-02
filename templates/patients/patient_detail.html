@@ -1,0 +1,361 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ patient.full_name }} ({{ patient.registration_id }}) — {{ t.app_name }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+  {% include 'partials/sidebar.html' %}
+
+  <div class="dashboard-content">
+    <div class="container-fluid max-w-1100">
+      <!-- Breadcrumb & Header -->
+      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 small">
+              <li class="breadcrumb-item"><a href="{% url 'patients:patient_list' %}">Patients</a></li>
+              <li class="breadcrumb-item active">{{ patient.full_name }}</li>
+            </ol>
+          </nav>
+          <h2 class="fw-bold text-dark mb-0">{{ patient.full_name }}</h2>
+        </div>
+
+        <div class="d-flex gap-2">
+          {% if user.role == 'health_worker' or user.is_superuser %}
+            <a href="{% url 'appointments:appointment_book' %}?patient_id={{ patient.pk }}" class="btn btn-sc-primary shadow-sm">
+              <i class="bi bi-calendar-plus me-1"></i> Book OPD Appointment
+            </a>
+            <a href="{% url 'referrals:referral_create' %}?patient_id={{ patient.pk }}" class="btn btn-outline-danger">
+              <i class="bi bi-ambulance me-1"></i> Initiate Referral
+            </a>
+            <a href="{% url 'patients:patient_update' patient.pk %}" class="btn btn-outline-secondary">
+              <i class="bi bi-pencil me-1"></i> Edit
+            </a>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Patient Bio Card -->
+      <div class="sc-card p-4 mb-4">
+        <div class="row g-4 align-items-center">
+          <div class="col-md-8">
+            <div class="d-flex align-items-center gap-3 mb-3">
+              <div class="rounded-circle bg-primary bg-opacity-10 text-primary p-3 fs-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                <i class="bi bi-person-fill"></i>
+              </div>
+              <div>
+                <div class="d-flex align-items-center gap-2">
+                  <h4 class="fw-bold text-dark mb-0">{{ patient.full_name }}</h4>
+                  <span class="badge bg-primary fs-6">{{ patient.registration_id }}</span>
+                </div>
+                <div class="text-muted small">
+                  {{ patient.gender_display }} | {{ patient.age }} Years | Blood Group: <strong>{{ patient.blood_group }}</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="row g-3 small">
+              <div class="col-sm-6">
+                <span class="text-muted d-block">Guardian / Caregiver:</span>
+                <strong>{{ patient.guardian_name|default:"Not specified" }}</strong>
+              </div>
+              <div class="col-sm-6">
+                <span class="text-muted d-block">Contact Mobile:</span>
+                <strong>{{ patient.phone|default:"Not provided" }}</strong>
+              </div>
+              <div class="col-sm-6">
+                <span class="text-muted d-block">Village & Panchayat:</span>
+                <strong>{{ patient.village }}{% if patient.panchayat %}, GP: {{ patient.panchayat }}{% endif %}</strong>
+              </div>
+              <div class="col-sm-6">
+                <span class="text-muted d-block">Tehsil & District:</span>
+                <strong>{{ patient.block }}, {{ patient.district }} ({{ patient.state }})</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-4 border-start-md ps-md-4">
+            <div class="p-3 bg-light rounded-3 mb-2 small">
+              <div class="text-muted mb-1">ABHA Health ID:</div>
+              <div class="fw-bold text-primary fs-6">{{ patient.abha_id|default:"Not Linked" }}</div>
+            </div>
+
+            <div class="d-flex justify-content-between small text-muted mb-2">
+              <span>Consent:</span>
+              <span class="text-success fw-bold"><i class="bi bi-check-circle-fill"></i> Informed Consent Recorded</span>
+            </div>
+            <div class="d-flex justify-content-between small text-muted">
+              <span>Registered By:</span>
+              <span>ASHA: {{ patient.registered_by.get_full_name|default:patient.registered_by.username|default:"System" }}</span>
+            </div>
+          </div>
+        </div>
+
+        {% if patient.chronic_conditions or patient.allergies %}
+          <div class="mt-4 pt-3 border-top">
+            <div class="row g-3">
+              {% if patient.chronic_conditions %}
+                <div class="col-md-6">
+                  <div class="p-2 bg-danger bg-opacity-10 rounded border border-danger-subtle small">
+                    <strong class="text-danger"><i class="bi bi-heart-pulse-fill me-1"></i> Chronic Illnesses:</strong>
+                    <div class="text-dark">{{ patient.chronic_conditions }}</div>
+                  </div>
+                </div>
+              {% endif %}
+              {% if patient.allergies %}
+                <div class="col-md-6">
+                  <div class="p-2 bg-warning bg-opacity-10 rounded border border-warning-subtle small">
+                    <strong class="text-dark"><i class="bi bi-shield-exclamation me-1"></i> Allergies / Precautions:</strong>
+                    <div class="text-dark">{{ patient.allergies }}</div>
+                  </div>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Vitals Section -->
+      <div class="sc-card p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="fw-bold text-dark mb-0">
+            <i class="bi bi-activity text-danger me-2"></i> Health Vitals Log (जांच रिकॉर्ड)
+          </h5>
+          <button type="button" class="btn btn-sm btn-outline-primary fw-bold" data-bs-toggle="modal" data-bs-target="#addVitalsModal">
+            <i class="bi bi-plus-circle me-1"></i> Record New Vitals
+          </button>
+        </div>
+
+        {% if vitals_history %}
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 small">
+              <thead class="table-light">
+                <tr>
+                  <th>Recorded At</th>
+                  <th>Blood Pressure</th>
+                  <th>Pulse</th>
+                  <th>SpO2</th>
+                  <th>Temperature</th>
+                  <th>Blood Sugar</th>
+                  <th>BMI</th>
+                  <th>Notes / ASHA</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for v in vitals_history %}
+                  <tr>
+                    <td>{{ v.recorded_at|date:"d M Y, h:i A" }}</td>
+                    <td><strong class="text-primary">{{ v.bp_display }}</strong></td>
+                    <td>{{ v.pulse_rate|default:"-" }} bpm</td>
+                    <td>
+                      {% if v.spo2 %}
+                        <span class="badge {% if v.spo2 < 95 %}bg-danger{% else %}bg-success{% endif %}">{{ v.spo2 }}%</span>
+                      {% else %}-{% endif %}
+                    </td>
+                    <td>{{ v.body_temperature|default:"-" }}°F</td>
+                    <td>{{ v.blood_sugar|default:"-" }} mg/dL</td>
+                    <td>{{ v.bmi|default:"-" }}</td>
+                    <td><small class="text-muted">{{ v.notes|default:"-" }}</small></td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="text-center py-4 text-muted small">
+            <p class="mb-2">No clinical vitals logged yet.</p>
+            <button type="button" class="btn btn-sm btn-sc-primary" data-bs-toggle="modal" data-bs-target="#addVitalsModal">
+              Record First Vitals
+            </button>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Appointments History -->
+      <div class="sc-card p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="fw-bold text-dark mb-0">
+            <i class="bi bi-calendar-check text-primary me-2"></i> OPD Appointments History
+          </h5>
+          {% if user.role == 'health_worker' or user.is_superuser %}
+            <a href="{% url 'appointments:appointment_book' %}?patient_id={{ patient.pk }}" class="btn btn-sm btn-sc-primary">
+              <i class="bi bi-plus-circle me-1"></i> Book New OPD Token
+            </a>
+          {% endif %}
+        </div>
+
+        {% if appointments %}
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 small">
+              <thead class="table-light">
+                <tr>
+                  <th>Slip Number</th>
+                  <th>Doctor & Hospital</th>
+                  <th>Date & Slot</th>
+                  <th>Token</th>
+                  <th>Status</th>
+                  <th>Prescription / Notes</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for a in appointments %}
+                  <tr>
+                    <td><span class="fw-bold text-primary">{{ a.appointment_number }}</span></td>
+                    <td>
+                      <div class="fw-semibold">{{ a.hospital.name|truncatechars:26 }}</div>
+                      <small class="text-muted">Dr. {{ a.doctor.get_full_name|default:a.doctor.username }}</small>
+                    </td>
+                    <td>
+                      <div>{{ a.appointment_date|date:"d M Y" }}</div>
+                      <small class="text-muted">{{ a.time_slot }}</small>
+                    </td>
+                    <td><span class="badge bg-primary fs-6 px-2 py-1">#{{ a.token_number }}</span></td>
+                    <td><span class="badge {{ a.status_badge_class }}">{{ a.get_status_display.split.0 }}</span></td>
+                    <td>
+                      {% if a.prescription %}
+                        <span class="badge bg-success-subtle text-success"><i class="bi bi-file-earmark-medical me-1"></i> Prescribed</span>
+                      {% else %}
+                        <span class="text-muted">-</span>
+                      {% endif %}
+                    </td>
+                    <td class="text-end">
+                      <a href="{% url 'appointments:appointment_print' a.pk %}" class="btn btn-sm btn-outline-secondary" target="_blank" title="Print Slip">
+                        <i class="bi bi-printer"></i> Slip
+                      </a>
+                      <a href="{% url 'appointments:appointment_detail' a.pk %}" class="btn btn-sm btn-outline-primary">
+                        Details
+                      </a>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="text-center py-4 text-muted small">
+            <p class="mb-0">No past OPD appointments found for this patient.</p>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Referrals History -->
+      <div class="sc-card p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="fw-bold text-dark mb-0">
+            <i class="bi bi-arrow-left-right text-danger me-2"></i> Clinical Referrals History
+          </h5>
+          {% if user.role == 'health_worker' or user.is_superuser %}
+            <a href="{% url 'referrals:referral_create' %}?patient_id={{ patient.pk }}" class="btn btn-sm btn-outline-danger">
+              <i class="bi bi-ambulance me-1"></i> New Referral
+            </a>
+          {% endif %}
+        </div>
+
+        {% if referrals %}
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 small">
+              <thead class="table-light">
+                <tr>
+                  <th>Referral Code</th>
+                  <th>Destination Hospital</th>
+                  <th>Reason</th>
+                  <th>Urgency</th>
+                  <th>108 Transit</th>
+                  <th>Status</th>
+                  <th class="text-end">View</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in referrals %}
+                  <tr>
+                    <td><span class="badge bg-danger-subtle text-danger fw-bold">{{ r.referral_code }}</span></td>
+                    <td>{{ r.to_hospital.name }}</td>
+                    <td>{{ r.referral_reason|truncatechars:45 }}</td>
+                    <td><span class="badge {{ r.urgency_badge_class }}">{{ r.get_urgency_display.split.0 }}</span></td>
+                    <td>
+                      {% if r.transport_required %}
+                        <span class="badge bg-danger text-white"><i class="bi bi-ambulance me-1"></i> {{ r.get_transport_status_display }}</span>
+                      {% else %}
+                        <span class="text-muted">Not needed</span>
+                      {% endif %}
+                    </td>
+                    <td><span class="badge {{ r.status_badge_class }}">{{ r.get_status_display.split.0 }}</span></td>
+                    <td class="text-end">
+                      <a href="{% url 'referrals:referral_detail' r.pk %}" class="btn btn-sm btn-outline-secondary">Details</a>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="text-center py-3 text-muted small">
+            <p class="mb-0">No referrals initiated for this patient.</p>
+          </div>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Record Vitals -->
+<div class="modal fade" id="addVitalsModal" tabindex="-1" aria-labelledby="addVitalsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <form action="{% url 'patients:patient_vitals_add' patient.pk %}" method="POST">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="addVitalsModalLabel">Record Health Vitals for {{ patient.full_name }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Systolic BP (ऊपरी बीपी - mmHg)</label>
+              {{ vital_form.blood_pressure_systolic }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Diastolic BP (निचला बीपी - mmHg)</label>
+              {{ vital_form.blood_pressure_diastolic }}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold">Pulse Rate (नाड़ी दर - bpm)</label>
+              {{ vital_form.pulse_rate }}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold">SpO2 Oxygen Saturation (%)</label>
+              {{ vital_form.spo2 }}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold">Temperature (बुखार - °F)</label>
+              {{ vital_form.body_temperature }}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold">Random Blood Sugar (mg/dL)</label>
+              {{ vital_form.blood_sugar }}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold">Weight (वजन - kg)</label>
+              {{ vital_form.weight_kg }}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold">Height (ऊंचाई - cm)</label>
+              {{ vital_form.height_cm }}
+            </div>
+            <div class="col-12">
+              <label class="form-label small fw-semibold">Clinical Observations & Field Notes</label>
+              {{ vital_form.notes }}
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sc-primary fw-bold">Save Vitals</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}Emergency Contacts & Support — {{ t.app_name }}{% endblock %}
+
+{% block content %}
+<div class="py-5 bg-danger bg-opacity-10 border-bottom">
+  <div class="container text-center max-w-700 py-3">
+    <h1 class="fw-bold text-dark mb-2">Emergency Contacts & District Helpdesk</h1>
+    <p class="lead text-muted mb-0">24x7 Government emergency services and healthcare administrative support.</p>
+  </div>
+</div>
+
+<div class="container py-5">
+  <div class="row g-4 mb-5">
+    <div class="col-md-4">
+      <div class="sc-card p-4 text-center border-top border-4 border-danger h-100">
+        <div class="display-4 text-danger mb-2"><i class="bi bi-telephone-inbound-fill"></i></div>
+        <h3 class="fw-bold mb-1">108</h3>
+        <h6 class="fw-bold text-muted mb-3">Toll-Free Ambulance Dispatch</h6>
+        <p class="small text-muted mb-0">Free 24x7 emergency medical transport for critical patients, trauma victims, and institutional delivery.</p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="sc-card p-4 text-center border-top border-4 border-success h-100">
+        <div class="display-4 text-success mb-2"><i class="bi bi-headset"></i></div>
+        <h3 class="fw-bold mb-1">104</h3>
+        <h6 class="fw-bold text-muted mb-3">Health Information Helpline</h6>
+        <p class="small text-muted mb-0">Free medical advice, symptom consultation, mental health counseling, and public health complaints.</p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="sc-card p-4 text-center border-top border-4 border-primary h-100">
+        <div class="display-4 text-primary mb-2"><i class="bi bi-gender-female"></i></div>
+        <h3 class="fw-bold mb-1">102</h3>
+        <h6 class="fw-bold text-muted mb-3">Janani Shishu Suraksha (JSSK)</h6>
+        <p class="small text-muted mb-0">Specialized pregnant mother and sick newborn transport to and from public healthcare institutions.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="sc-card p-4 p-md-5">
+        <h4 class="fw-bold text-dark mb-3">Contact District Administration</h4>
+        <p class="text-muted small mb-4">Community Health Workers encountering system issues or hospital verification queries may leave a message for the District CMO office.</p>
+        
+        <form onsubmit="alert('Thank you. Your inquiry has been routed to the District Health Officer.'); return false;">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Your Name / नाम</label>
+              <input type="text" class="form-control" placeholder="e.g. ASHA Sunita" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Mobile Number / मोबाइल</label>
+              <input type="tel" class="form-control" placeholder="10-digit number" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">District / जिला</label>
+              <input type="text" class="form-control" value="Raisen" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Block / ब्लॉक</label>
+              <input type="text" class="form-control" placeholder="Tehsil name">
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Message / समस्या का विवरण</label>
+              <textarea class="form-control" rows="4" placeholder="Describe the assistance needed..." required></textarea>
+            </div>
+            <div class="col-12">
+              <button type="submit" class="btn btn-sc-primary px-4">Submit Query / संदेश भेजें</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

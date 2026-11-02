@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ hospital.name }} — {{ t.app_name }}{% endblock %}
+
+{% block content %}
+<div class="py-4 bg-light border-bottom">
+  <div class="container">
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-2 small">
+        <li class="breadcrumb-item"><a href="{% url 'hospitals:hospital_list' %}">Hospitals</a></li>
+        <li class="breadcrumb-item active">{{ hospital.name }}</li>
+      </ol>
+    </nav>
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+          <span class="badge {{ hospital.badge_class }}">{{ hospital.display_type }}</span>
+          {% if hospital.is_verified %}
+            <span class="text-success small fw-bold"><i class="bi bi-patch-check-fill"></i> Govt Verified</span>
+          {% endif %}
+          <span class="text-muted small">Reg: {{ hospital.registration_number }}</span>
+        </div>
+        <h2 class="fw-bold text-dark mb-0">{{ hospital.name }}</h2>
+        {% if hospital.name_hi %}<h5 class="text-secondary mb-0">{{ hospital.name_hi }}</h5>{% endif %}
+      </div>
+
+      <div class="d-flex gap-2">
+        {% if user.is_authenticated and user.role == 'health_worker' %}
+          <a href="{% url 'appointments:appointment_book' %}?hospital_id={{ hospital.pk }}" class="btn btn-sc-primary fw-bold shadow-sm">
+            <i class="bi bi-calendar-plus me-1"></i> Book OPD Appointment
+          </a>
+        {% endif %}
+        {% if user.is_authenticated and user.role == 'doctor' and user.doctor_profile.hospital_id == hospital.id or user.is_admin_user %}
+          <a href="{% url 'hospitals:hospital_services_update' hospital.pk %}" class="btn btn-outline-primary">
+            <i class="bi bi-pencil me-1"></i> Update Beds & Services
+          </a>
+        {% endif %}
+        {% if user.is_admin_user %}
+          <a href="{% url 'hospitals:hospital_edit' hospital.pk %}" class="btn btn-outline-secondary">
+            <i class="bi bi-gear"></i> Edit Facility
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container py-4">
+  <div class="row g-4">
+    <!-- Left Column: Key Stats & Doctors -->
+    <div class="col-lg-8">
+      <!-- Bed Capacity & Occupancy -->
+      <div class="sc-card p-4 mb-4">
+        <h5 class="fw-bold text-dark mb-3"><i class="bi bi-hospital text-primary me-2"></i> Inpatient Bed Capacity & Occupancy</h5>
+        <div class="row g-3 mb-3 text-center">
+          <div class="col-sm-4">
+            <div class="p-3 bg-light rounded-3 border">
+              <span class="text-muted small d-block">Total Sanctioned Beds</span>
+              <strong class="fs-4 text-dark">{{ hospital.total_beds }}</strong>
+            </div>
+          </div>
+          <div class="col-sm-4">
+            <div class="p-3 bg-light rounded-3 border">
+              <span class="text-muted small d-block">Available Vacant Beds</span>
+              <strong class="fs-4 text-success">{{ hospital.available_beds }}</strong>
+            </div>
+          </div>
+          <div class="col-sm-4">
+            <div class="p-3 bg-light rounded-3 border">
+              <span class="text-muted small d-block">ICU / HDU Critical Beds</span>
+              <strong class="fs-4 text-danger">{{ hospital.icu_beds }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="d-flex justify-content-between small text-muted mb-1">
+            <span>Bed Occupancy Rate</span>
+            <span><strong>{{ hospital.occupancy_rate }}%</strong> Occupied</span>
+          </div>
+          <div class="progress" style="height: 10px;">
+            <div class="progress-bar {% if hospital.occupancy_rate > 85 %}bg-danger{% elif hospital.occupancy_rate > 60 %}bg-warning{% else %}bg-success{% endif %}" role="progressbar" style="width: {{ hospital.occupancy_rate }}%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Doctors on Duty -->
+      <div class="sc-card p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="fw-bold text-dark mb-0">
+            <i class="bi bi-person-badge-fill text-success me-2"></i> Doctors & OPD Consultation Schedule
+          </h5>
+          <span class="badge bg-light text-dark border">{{ doctors.count }} Active Doctors</span>
+        </div>
+
+        {% if doctors %}
+          <div class="d-flex flex-column gap-3">
+            {% for doc in doctors %}
+              <div class="p-3 bg-light rounded-3 border d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div class="d-flex align-items-center gap-3">
+                  <div class="rounded-circle bg-white text-primary border p-3 fs-4 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                    <i class="bi bi-person-fill"></i>
+                  </div>
+                  <div>
+                    <h6 class="fw-bold text-dark mb-1">Dr. {{ doc.user.get_full_name|default:doc.user.username }}</h6>
+                    <div class="small text-muted mb-1">
+                      <span class="badge bg-primary-subtle text-primary">{{ doc.specialty.name|default:"General Medicine" }}</span> | {{ doc.qualification }}
+                    </div>
+                    <div class="small text-secondary">
+                      <i class="bi bi-geo-alt me-1"></i> Room: <strong>{{ doc.room_number }}</strong> |
+                      <i class="bi bi-calendar3 me-1"></i> Days: <strong>{{ doc.opd_days }}</strong> |
+                      <i class="bi bi-clock me-1"></i> {{ doc.opd_start_time|time:"H:i" }} - {{ doc.opd_end_time|time:"H:i" }}
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  {% if user.is_authenticated and user.role == 'health_worker' %}
+                    <a href="{% url 'appointments:appointment_book' %}?hospital_id={{ hospital.pk }}&doctor_id={{ doc.user.pk }}" class="btn btn-sm btn-sc-primary fw-bold">
+                      <i class="bi bi-calendar-plus me-1"></i> Book Slot
+                    </a>
+                  {% endif %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="text-center py-4 text-muted small">
+            <p class="mb-0">No specialist doctors currently listed for active OPD booking.</p>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Specialties Offered -->
+      <div class="sc-card p-4">
+        <h5 class="fw-bold text-dark mb-3"><i class="bi bi-award-fill text-warning me-2"></i> Clinical Specialties & Services</h5>
+        <div class="row g-2">
+          {% for sp in hospital.specialties.all %}
+            <div class="col-sm-6">
+              <div class="p-2 bg-light rounded border d-flex align-items-center gap-2">
+                <i class="bi {{ sp.icon|default:'bi-check2-circle' }} text-primary fs-5"></i>
+                <div>
+                  <strong class="text-dark small d-block">{{ sp.name }}</strong>
+                  {% if sp.name_hi %}<small class="text-muted" style="font-size: 0.75rem;">{{ sp.name_hi }}</small>{% endif %}
+                </div>
+              </div>
+            </div>
+          {% empty %}
+            <div class="col-12 text-muted small">General outpatient and primary emergency care.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Location, Facilities & Emergency -->
+    <div class="col-lg-4">
+      <!-- Emergency Readiness Card -->
+      <div class="sc-card p-4 mb-4 border-top border-4 border-danger">
+        <h5 class="fw-bold text-dark mb-3"><i class="bi bi-shield-plus text-danger me-2"></i> Emergency Readiness</h5>
+        <ul class="list-unstyled d-flex flex-column gap-3 small mb-0 text-secondary">
+          <li class="d-flex justify-content-between align-items-center">
+            <span>24x7 Emergency Casualty:</span>
+            {% if hospital.emergency_24x7 %}
+              <span class="badge bg-success">Operational</span>
+            {% else %}
+              <span class="badge bg-secondary">Daytime Only</span>
+            {% endif %}
+          </li>
+          <li class="d-flex justify-content-between align-items-center">
+            <span>Dial 108 Ambulance Hub:</span>
+            {% if hospital.ambulance_available %}
+              <span class="badge bg-success">Stationed (108)</span>
+            {% else %}
+              <span class="badge bg-secondary">On-Call</span>
+            {% endif %}
+          </li>
+          <li class="d-flex justify-content-between align-items-center">
+            <span>Medical Oxygen Plant:</span>
+            {% if hospital.oxygen_plant_available %}
+              <span class="badge bg-success">Available</span>
+            {% else %}
+              <span class="badge bg-secondary">Cylinders</span>
+            {% endif %}
+          </li>
+          <li class="d-flex justify-content-between align-items-center">
+            <span>Blood Storage / Bank:</span>
+            {% if hospital.blood_bank_available %}
+              <span class="badge bg-success">Functional</span>
+            {% else %}
+              <span class="badge bg-secondary">Referred</span>
+            {% endif %}
+          </li>
+        </ul>
+
+        <div class="mt-3 pt-3 border-top">
+          <div class="small text-muted mb-1">Direct Hospital Contact:</div>
+          <div class="fw-bold text-dark fs-5"><i class="bi bi-telephone-fill text-primary me-2"></i> {{ hospital.contact_phone }}</div>
+          <div class="small text-muted mt-2">Emergency Hotline:</div>
+          <div class="fw-bold text-danger fs-5"><i class="bi bi-telephone-inbound-fill text-danger me-2"></i> {{ hospital.emergency_phone }}</div>
+        </div>
+      </div>
+
+      <!-- Address & Map Card -->
+      <div class="sc-card p-4">
+        <h5 class="fw-bold text-dark mb-3"><i class="bi bi-geo-alt-fill text-danger me-2"></i> Location & Address</h5>
+        <p class="small text-muted mb-3">{{ hospital.address }}</p>
+        <div class="small mb-3">
+          <div>Village / Town: <strong>{{ hospital.village_town }}</strong></div>
+          <div>Block / Tehsil: <strong>{{ hospital.block }}</strong></div>
+          <div>District: <strong>{{ hospital.district }}</strong></div>
+          <div>State: <strong>{{ hospital.state }} - {{ hospital.pincode }}</strong></div>
+        </div>
+
+        <div id="hospitalDetailMap" style="height: 200px; border-radius: 8px;" class="border mb-3"></div>
+
+        <a href="https://www.google.com/maps/dir/?api=1&destination={{ hospital.latitude }},{{ hospital.longitude }}" target="_blank" class="btn btn-outline-secondary btn-sm w-100">
+          <i class="bi bi-sign-turn-right me-1"></i> Get Driving Directions
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const lat = {{ hospital.latitude }};
+    const lng = {{ hospital.longitude }};
+    const map = L.map('hospitalDetailMap', { zoomControl: false }).setView([lat, lng], 13);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OSM'
+    }).addTo(map);
+
+    L.marker([lat, lng]).addTo(map).bindPopup("<strong>{{ hospital.name|escapejs }}</strong>").openPopup();
+});
+</script>
+{% endblock %}

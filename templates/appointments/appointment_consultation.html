@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block title %}OPD Consultation — {{ appointment.patient.full_name }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+  {% include 'partials/sidebar.html' %}
+
+  <div class="dashboard-content">
+    <div class="container-fluid max-w-800">
+      <div class="mb-4">
+        <h2 class="fw-bold text-dark mb-1">Doctor OPD Consultation & Prescription</h2>
+        <p class="text-muted small">
+          Patient: <strong>{{ appointment.patient.full_name }}</strong> ({{ appointment.patient.gender_display }} / {{ appointment.patient.age }}y) | Token: <strong>#{{ appointment.token_number }}</strong>
+        </p>
+      </div>
+
+      <!-- Patient Snapshot Card -->
+      <div class="sc-card p-3 bg-light border mb-4">
+        <div class="row g-2 small">
+          <div class="col-md-6">
+            <span class="text-muted">Chief Complaints:</span>
+            <div class="fw-semibold text-dark">{{ appointment.symptoms }}</div>
+          </div>
+          <div class="col-md-6">
+            <span class="text-muted">Chronic Conditions:</span>
+            <div class="fw-semibold text-danger">{{ appointment.patient.chronic_conditions|default:"None reported" }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sc-card p-4 p-md-5">
+        <form method="POST">
+          {% csrf_token %}
+          <div class="mb-4">
+            <label class="form-label fw-bold text-dark">Clinical Examination & Diagnosis (जांच व निदान) *</label>
+            {{ form.doctor_notes }}
+            <small class="text-muted">Enter findings, vital signs observed, provisional or definitive diagnosis.</small>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-bold text-dark">Prescription & Medication (दवाइयां एवं परामर्श) *</label>
+            {{ form.prescription }}
+            <small class="text-muted">Write generic medicine names, dosages, duration, and lifestyle/dietary guidance.</small>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-bold text-dark">Follow-Up Consultation Date (Optional)</label>
+            {{ form.follow_up_date }}
+          </div>
+
+          <div class="d-flex justify-content-end gap-2">
+            <a href="{% url 'appointments:appointment_detail' appointment.pk %}" class="btn btn-outline-secondary">Cancel</a>
+            <button type="submit" class="btn btn-success px-4 fw-bold shadow-sm">
+              <i class="bi bi-check2-circle me-1"></i> Save & Mark Consultation Completed
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

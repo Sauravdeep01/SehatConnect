@@ -1,0 +1,91 @@
+<div class="dashboard-sidebar">
+  <div class="d-flex align-items-center gap-3 pb-3 mb-3 border-bottom">
+    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold" style="width: 44px; height: 44px;">
+      {{ user.first_name|first|default:user.username|first|upper }}
+    </div>
+    <div class="overflow-hidden">
+      <div class="fw-bold text-dark text-truncate">{{ user.get_full_name|default:user.username }}</div>
+      <div class="badge badge-soft-primary">{{ user.display_role_name }}</div>
+    </div>
+  </div>
+
+  <nav class="d-flex flex-column">
+    {% if user.role == 'health_worker' %}
+      <div class="text-uppercase text-muted fw-bold small mb-2 px-2" style="font-size: 0.7rem;">ASHA Operations</div>
+      <a href="{% url 'accounts:worker_dashboard' %}" class="sidebar-link {% if request.resolver_match.url_name == 'worker_dashboard' %}active{% endif %}">
+        <i class="bi bi-speedometer2"></i> {{ t.nav_dashboard }}
+      </a>
+      <a href="{% url 'patients:patient_create' %}" class="sidebar-link {% if request.resolver_match.url_name == 'patient_create' %}active{% endif %}">
+        <i class="bi bi-person-plus-fill"></i> {{ t.action_register_patient }}
+      </a>
+      <a href="{% url 'patients:patient_list' %}" class="sidebar-link {% if 'patients' in request.path and request.resolver_match.url_name != 'patient_create' %}active{% endif %}">
+        <i class="bi bi-people"></i> Village Patient Registry
+      </a>
+      <a href="{% url 'appointments:appointment_book' %}" class="sidebar-link {% if request.resolver_match.url_name == 'appointment_book' %}active{% endif %}">
+        <i class="bi bi-calendar-plus-fill"></i> {{ t.action_book_appointment }}
+      </a>
+      <a href="{% url 'appointments:appointment_list' %}" class="sidebar-link {% if 'appointments' in request.path and request.resolver_match.url_name != 'appointment_book' %}active{% endif %}">
+        <i class="bi bi-calendar-check"></i> OPD Tokens Booked
+      </a>
+      <a href="{% url 'referrals:referral_create' %}" class="sidebar-link {% if request.resolver_match.url_name == 'referral_create' %}active{% endif %}">
+        <i class="bi bi-ambulance"></i> {{ t.action_create_referral }}
+      </a>
+      <a href="{% url 'referrals:referral_list' %}" class="sidebar-link {% if 'referrals' in request.path and request.resolver_match.url_name != 'referral_create' %}active{% endif %}">
+        <i class="bi bi-arrow-left-right"></i> Referral Tracking
+      </a>
+      <a href="{% url 'hospitals:hospital_list' %}" class="sidebar-link {% if 'hospitals' in request.path %}active{% endif %}">
+        <i class="bi bi-hospital"></i> Hospital Finder
+      </a>
+
+    {% elif user.role == 'doctor' %}
+      <div class="text-uppercase text-muted fw-bold small mb-2 px-2" style="font-size: 0.7rem;">Doctor Portal</div>
+      <a href="{% url 'accounts:doctor_dashboard' %}" class="sidebar-link {% if request.resolver_match.url_name == 'doctor_dashboard' %}active{% endif %}">
+        <i class="bi bi-speedometer2"></i> Today's OPD Queue
+      </a>
+      <a href="{% url 'appointments:appointment_list' %}" class="sidebar-link {% if 'appointments' in request.path %}active{% endif %}">
+        <i class="bi bi-calendar-check"></i> Patient Appointments
+      </a>
+      <a href="{% url 'referrals:referral_list' %}" class="sidebar-link {% if 'referrals' in request.path %}active{% endif %}">
+        <i class="bi bi-arrow-left-right"></i> Incoming Referrals
+      </a>
+      {% if user.doctor_profile.hospital %}
+        <a href="{% url 'hospitals:hospital_services_update' user.doctor_profile.hospital.pk %}" class="sidebar-link">
+          <i class="bi bi-hospital-fill"></i> Update Bed Capacity
+        </a>
+      {% endif %}
+      <a href="{% url 'accounts:toggle_availability' %}" class="sidebar-link text-{% if user.doctor_profile.is_available %}success{% else %}warning{% endif %}">
+        <i class="bi bi-toggle-{% if user.doctor_profile.is_available %}on{% else %}off{% endif %}"></i> 
+        {% if user.doctor_profile.is_available %}OPD Available{% else %}OPD On Leave{% endif %}
+      </a>
+
+    {% elif user.is_admin_user %}
+      <div class="text-uppercase text-muted fw-bold small mb-2 px-2" style="font-size: 0.7rem;">Administration</div>
+      <a href="{% url 'analytics:admin_dashboard' %}" class="sidebar-link {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}">
+        <i class="bi bi-speedometer2"></i> Analytics Overview
+      </a>
+      <a href="{% url 'analytics:admin_users_list' %}" class="sidebar-link {% if 'users' in request.path %}active{% endif %}">
+        <i class="bi bi-person-badge"></i> User & Worker Registry
+      </a>
+      <a href="{% url 'hospitals:hospital_list' %}" class="sidebar-link">
+        <i class="bi bi-hospital"></i> Hospital Management
+      </a>
+      <a href="{% url 'hospitals:hospital_create' %}" class="sidebar-link">
+        <i class="bi bi-plus-circle"></i> Add New Hospital
+      </a>
+      <a href="{% url 'appointments:appointment_list' %}" class="sidebar-link">
+        <i class="bi bi-calendar-check"></i> All Appointments
+      </a>
+      <a href="{% url 'referrals:referral_list' %}" class="sidebar-link">
+        <i class="bi bi-arrow-left-right"></i> All Referrals
+      </a>
+    {% endif %}
+
+    <div class="text-uppercase text-muted fw-bold small mt-4 mb-2 px-2" style="font-size: 0.7rem;">Settings</div>
+    <a href="{% url 'accounts:profile' %}" class="sidebar-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
+      <i class="bi bi-person-gear"></i> {{ t.nav_profile }}
+    </a>
+    <a href="{% url 'accounts:logout' %}" class="sidebar-link text-danger">
+      <i class="bi bi-box-arrow-right"></i> {{ t.nav_logout }}
+    </a>
+  </nav>
+</div>

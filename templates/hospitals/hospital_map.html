@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+
+{% block title %}GIS Hospital Locator Map — {{ t.app_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+      <h2 class="fw-bold text-dark mb-1"><i class="bi bi-map-fill text-primary me-2"></i> GIS Healthcare Facility Locator</h2>
+      <p class="text-muted small mb-0">Locate nearest verified public hospitals, Primary Health Centres (PHC), and check available beds in real time.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <button type="button" class="btn btn-outline-primary" id="btnGeolocate">
+        <i class="bi bi-crosshair me-1"></i> Locate My Position
+      </button>
+      <a href="{% url 'hospitals:hospital_list' %}" class="btn btn-sc-primary">
+        <i class="bi bi-list-ul me-1"></i> Directory List View
+      </a>
+    </div>
+  </div>
+
+  <!-- Map Filters Toolbar -->
+  <div class="sc-card p-3 mb-3 bg-white">
+    <div class="row g-2 align-items-center">
+      <div class="col-md-4">
+        <select id="mapDistrictFilter" class="form-select form-select-sm">
+          <option value="">All Districts (सभी जिले)</option>
+          {% for d in districts %}
+            <option value="{{ d }}">{{ d }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <select id="mapTypeFilter" class="form-select form-select-sm">
+          <option value="">All Facility Types (सभी प्रकार)</option>
+          {% for code, label in facility_types %}
+            <option value="{{ code }}">{{ label.split.0 }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4 d-flex align-items-center justify-content-end gap-3 text-muted small">
+        <span class="d-flex align-items-center gap-1"><span class="badge bg-info p-1"></span> PHC</span>
+        <span class="d-flex align-items-center gap-1"><span class="badge bg-primary p-1"></span> CHC</span>
+        <span class="d-flex align-items-center gap-1"><span class="badge bg-success p-1"></span> District Hospital</span>
+        <span class="d-flex align-items-center gap-1"><span class="badge bg-danger p-1"></span> Medical College</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Map Container -->
+  <div class="sc-card p-0 overflow-hidden shadow-sm">
+    <div id="map"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Default center on Central Madhya Pradesh (Raisen / Bhopal region)
+    const map = L.map('map').setView([23.3323, 77.7818], 9);
+
+    // OpenStreetMap standard tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        attribution: '&copy; OpenStreetMap contributors | SehatConnect Rural Health GIS'
+    }).addTo(map);
+
+    let markersLayer = L.layerGroup().addTo(map);
+
+    function getMarkerColor(facilityType) {
+        switch(facilityType) {
+            case 'phc': return '#0dcaf0';
+            case 'chc': return '#0b5ed7';
+            case 'sdh': return '#0fa47f';
+            case 'dh': return '#198754';
+            case 'mc': return '#dc3545';
+            default: return '#6c757d';
+        }
+    }
+
+    function loadMarkers() {
+        const district = document.getElementById('mapDistrictFilter').value;
+        const type = document.getElementById('mapTypeFilter').value;
+
+        fetch(`/hospitals/api/markers/?district=${encodeURIComponent(district)}&facility_type=${encodeURIComponent(type)}`)
+            .then(res => res.json())
+            .then(data => {
+                markersLayer.clearLayers();
+                const bounds = [];
+
+                if (data.hospitals && data.hospitals.length > 0) {
+                    data.hospitals.forEach(h => {
+                        const color = getMarkerColor(h.facility_type);
+                        
+                        // Custom HTML SVG Pin Icon
+                        const customIcon = L.divIcon({
+                            className: 'custom-map-pin',
+                            html: `<div style="background-color: ${color}; width: 28px; height: 28px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;">
+                                     <i class="bi bi-plus-lg" style="color: #fff; transform: rotate(45deg); font-size: 14px; font-weight: bold;"></i>
+                                   </div>`,
+                            iconSize: [28, 28],
+                            iconAnchor: [14, 28],
+                            popupAnchor: [0, -28]
+                        });
+
+                        const popupHtml = `
+                            <div class="map-popup-card">
+                                <span class="badge" style="background-color: ${color}; color: #fff;">${h.facility_type_display}</span>
+                                <div class="map-popup-title mt-1">${h.name}</div>
+                                <div class="small text-muted mb-2"><i class="bi bi-geo-alt text-danger"></i> ${h.village_town}, ${h.district}</div>
+                                
+                                <div class="p-2 bg-light rounded small mb-2">
+                                    <div>Available Beds: <strong>${h.available_beds}</strong> / ${h.total_beds}</div>
+                                    <div>ICU Beds: <strong>${h.icu_beds}</strong></div>
+                                    <div>Emergency: <strong>${h.emergency_24x7 ? '24x7 Ready' : 'Limited'}</strong></div>
+                                </div>
+                                <div class="d-flex gap-1">
+                                    <a href="${h.url}" class="btn btn-sm btn-outline-primary flex-grow-1">Facility Details</a>
+                                    <a href="/appointments/book/?hospital_id=${h.id}" class="btn btn-sm btn-sc-primary">Book OPD</a>
+                                </div>
+                            </div>
+                        `;
+
+                        const marker = L.marker([h.lat, h.lng], { icon: customIcon }).bindPopup(popupHtml);
+                        markersLayer.addLayer(marker);
+                        bounds.push([h.lat, h.lng]);
+                    });
+
+                    if (bounds.length > 0) {
+                        map.fitBounds(bounds, { padding: [50, 50] });
+                    }
+                }
+            })
+            .catch(err => console.error('Error loading map markers:', err));
+    }
+
+    // Initial load
+    loadMarkers();
+
+    // Listen to filter updates
+    document.getElementById('mapDistrictFilter').addEventListener('change', loadMarkers);
+    document.getElementById('mapTypeFilter').addEventListener('change', loadMarkers);
+
+    // Geolocation handler
+    document.getElementById('btnGeolocate').addEventListener('click', function() {
+        if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                const userLat = position.coords.latitude;
+                const userLng = position.coords.longitude;
+                map.setView([userLat, userLng], 12);
+
+                const userIcon = L.divIcon({
+                    className: 'user-pin',
+                    html: `<div style="background-color: #212529; width: 20px; height: 20px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 10px rgba(0,0,0,0.5);"></div>`,
+                    iconSize: [20, 20],
+                    iconAnchor: [10, 10]
+                });
+                L.marker([userLat, userLng], { icon: userIcon }).addTo(map).bindPopup("<strong>You are here</strong>").openPopup();
+            }, function() {
+                alert("Location access denied or unavailable. Centering on Madhya Pradesh public health district.");
+            });
+        } else {
+            alert("Geolocation is not supported by your browser.");
+        }
+    });
+});
+</script>
+{% endblock %}

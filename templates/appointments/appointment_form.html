@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} — {{ t.app_name }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+  {% include 'partials/sidebar.html' %}
+
+  <div class="dashboard-content">
+    <div class="container-fluid max-w-800">
+      <div class="mb-4">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb mb-1 small">
+            <li class="breadcrumb-item"><a href="{% url 'appointments:appointment_list' %}">Appointments</a></li>
+            <li class="breadcrumb-item active">{{ title }}</li>
+          </ol>
+        </nav>
+        <h2 class="fw-bold text-dark mb-1">{{ title }}</h2>
+        <p class="text-muted small">Reserve a time-slotted OPD token with a verified doctor on behalf of a rural patient.</p>
+      </div>
+
+      <div class="sc-card p-4 p-md-5">
+        <form method="POST">
+          {% csrf_token %}
+
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger py-2 small mb-4">
+              {% for err in form.non_field_errors %}{{ err }}{% endfor %}
+            </div>
+          {% endif %}
+
+          <div class="row g-3 mb-4">
+            <div class="col-12">
+              <label class="form-label fw-semibold small">1. Select Patient (मरीज चुनें) *</label>
+              {{ form.patient }}
+              {% if form.patient.errors %}<div class="text-danger small mt-1">{{ form.patient.errors.0 }}</div>{% endif %}
+              <div class="d-flex justify-content-between align-items-center mt-1">
+                <small class="text-muted">Not registered yet?</small>
+                <a href="{% url 'patients:patient_create' %}" class="small text-primary fw-bold text-decoration-none">
+                  <i class="bi bi-person-plus me-1"></i> Register New Patient
+                </a>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">2. Public Healthcare Facility *</label>
+              {{ form.hospital }}
+              {% if form.hospital.errors %}<div class="text-danger small mt-1">{{ form.hospital.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">3. Specialist Doctor & Room *</label>
+              {{ form.doctor }}
+              {% if form.doctor.errors %}<div class="text-danger small mt-1">{{ form.doctor.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">4. Consultation Date (दिनांक) *</label>
+              {{ form.appointment_date }}
+              {% if form.appointment_date.errors %}<div class="text-danger small mt-1">{{ form.appointment_date.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">5. Time Slot (समय स्लॉट) *</label>
+              {{ form.time_slot }}
+              {% if form.time_slot.errors %}<div class="text-danger small mt-1">{{ form.time_slot.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="col-md-12">
+              <label class="form-label fw-semibold small">6. Urgency Priority Level *</label>
+              {{ form.urgency }}
+              {% if form.urgency.errors %}<div class="text-danger small mt-1">{{ form.urgency.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="col-12">
+              <label class="form-label fw-semibold small">7. Chief Complaints & Symptoms (लक्षण) *</label>
+              {{ form.symptoms }}
+              {% if form.symptoms.errors %}<div class="text-danger small mt-1">{{ form.symptoms.errors.0 }}</div>{% endif %}
+              <small class="text-muted">Describe primary discomfort, duration, and any medicines already taken.</small>
+            </div>
+          </div>
+
+          <div class="p-3 bg-light rounded-3 border mb-4 small text-secondary">
+            <i class="bi bi-shield-check text-primary me-1"></i>
+            <strong>Guaranteed Token:</strong> An OPD Slip with a unique QR code and token number will be generated immediately for the patient to carry to the hospital counter.
+          </div>
+
+          <div class="d-flex justify-content-end gap-2">
+            <a href="{% url 'appointments:appointment_list' %}" class="btn btn-outline-secondary">{{ t.action_cancel }}</a>
+            <button type="submit" class="btn btn-sc-primary px-4 fw-bold shadow-sm">
+              <i class="bi bi-calendar-check me-1"></i> Confirm & Generate Token
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Reschedule Appointment — {{ appointment.appointment_number }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+  {% include 'partials/sidebar.html' %}
+
+  <div class="dashboard-content">
+    <div class="container-fluid max-w-600">
+      <div class="mb-4">
+        <h2 class="fw-bold text-dark mb-1">Reschedule OPD Appointment</h2>
+        <p class="text-muted small">
+          Patient: <strong>{{ appointment.patient.full_name }}</strong> with <strong>Dr. {{ appointment.doctor.get_full_name|default:appointment.doctor.username }}</strong>
+        </p>
+      </div>
+
+      <div class="sc-card p-4 p-md-5">
+        <form method="POST">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">New Consultation Date</label>
+            {{ form.appointment_date }}
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-semibold small">New Preferred Time Slot</label>
+            {{ form.time_slot }}
+          </div>
+
+          <div class="d-flex justify-content-end gap-2">
+            <a href="{% url 'appointments:appointment_detail' appointment.pk %}" class="btn btn-outline-secondary">Cancel</a>
+            <button type="submit" class="btn btn-warning px-4 fw-bold">Confirm Reschedule</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

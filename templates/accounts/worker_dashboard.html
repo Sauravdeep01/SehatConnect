@@ -1,0 +1,263 @@
+{% extends 'base.html' %}
+
+{% block title %}Health Worker Dashboard — {{ t.app_name }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+  {% include 'partials/sidebar.html' %}
+
+  <div class="dashboard-content">
+    <div class="container-fluid">
+      <!-- Welcome Header -->
+      <div class="sc-card p-4 bg-primary text-white mb-4 position-relative overflow-hidden">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 position-relative" style="z-index: 2;">
+          <div>
+            <div class="badge bg-white text-primary mb-2 fw-bold">ASHA / Community Health Worker</div>
+            <h2 class="fw-bold mb-1">Namaste, {{ user.get_full_name|default:user.username }}!</h2>
+            <p class="mb-0 text-white-50">
+              Assigned Area: <strong>{{ user.health_worker_profile.assigned_village|default:"Raisen Block" }}</strong> | Gram Panchayat: <strong>{{ user.health_worker_profile.panchayat|default:"Raisen" }}</strong>
+            </p>
+          </div>
+          <div class="d-flex gap-2">
+            <a href="{% url 'patients:patient_create' %}" class="btn btn-light text-primary fw-bold shadow-sm">
+              <i class="bi bi-person-plus-fill me-1"></i> {{ t.action_register_patient }}
+            </a>
+            <a href="{% url 'appointments:appointment_book' %}" class="btn btn-success fw-bold shadow-sm">
+              <i class="bi bi-calendar-plus-fill me-1"></i> {{ t.action_book_appointment }}
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Metrics -->
+      <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-xl-3">
+          <div class="stat-widget">
+            <div class="stat-widget-icon bg-primary-subtle text-primary">
+              <i class="bi bi-people-fill"></i>
+            </div>
+            <div class="stat-widget-value">{{ stats.total_patients }}</div>
+            <div class="stat-widget-label">Registered Patients</div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+          <div class="stat-widget">
+            <div class="stat-widget-icon bg-success-subtle text-success">
+              <i class="bi bi-calendar-event"></i>
+            </div>
+            <div class="stat-widget-value">{{ stats.today_appointments_count }}</div>
+            <div class="stat-widget-label">Today's Appointments</div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+          <div class="stat-widget">
+            <div class="stat-widget-icon bg-info-subtle text-info">
+              <i class="bi bi-calendar-check"></i>
+            </div>
+            <div class="stat-widget-value">{{ stats.active_appointments }}</div>
+            <div class="stat-widget-label">Active OPD Tokens</div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+          <div class="stat-widget">
+            <div class="stat-widget-icon bg-danger-subtle text-danger">
+              <i class="bi bi-arrow-left-right"></i>
+            </div>
+            <div class="stat-widget-value">{{ stats.pending_referrals }}</div>
+            <div class="stat-widget-label">Pending Referrals</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions Grid -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-3">
+          <a href="{% url 'patients:patient_create' %}" class="sc-card p-3 d-flex align-items-center gap-3 text-decoration-none text-dark sc-card-interactive">
+            <div class="rounded-3 bg-primary bg-opacity-10 text-primary p-3 fs-4">
+              <i class="bi bi-person-plus-fill"></i>
+            </div>
+            <div>
+              <div class="fw-bold">Register Patient</div>
+              <small class="text-muted">Add villager health file</small>
+            </div>
+          </a>
+        </div>
+        <div class="col-md-3">
+          <a href="{% url 'appointments:appointment_book' %}" class="sc-card p-3 d-flex align-items-center gap-3 text-decoration-none text-dark sc-card-interactive">
+            <div class="rounded-3 bg-success bg-opacity-10 text-success p-3 fs-4">
+              <i class="bi bi-calendar-plus-fill"></i>
+            </div>
+            <div>
+              <div class="fw-bold">Book OPD Appointment</div>
+              <small class="text-muted">Doctor token booking</small>
+            </div>
+          </a>
+        </div>
+        <div class="col-md-3">
+          <a href="{% url 'referrals:referral_create' %}" class="sc-card p-3 d-flex align-items-center gap-3 text-decoration-none text-dark sc-card-interactive">
+            <div class="rounded-3 bg-danger bg-opacity-10 text-danger p-3 fs-4">
+              <i class="bi bi-ambulance"></i>
+            </div>
+            <div>
+              <div class="fw-bold">Emergency Referral</div>
+              <small class="text-muted">Escalate to DH / Medical College</small>
+            </div>
+          </a>
+        </div>
+        <div class="col-md-3">
+          <a href="{% url 'hospitals:hospital_list' %}" class="sc-card p-3 d-flex align-items-center gap-3 text-decoration-none text-dark sc-card-interactive">
+            <div class="rounded-3 bg-warning bg-opacity-10 text-warning p-3 fs-4">
+              <i class="bi bi-geo-alt-fill"></i>
+            </div>
+            <div>
+              <div class="fw-bold">Hospital Finder</div>
+              <small class="text-muted">Locate PHC & beds</small>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <!-- Main Tables Section -->
+      <div class="row g-4 mb-4">
+        <!-- Today's Appointments -->
+        <div class="col-lg-7">
+          <div class="sc-card p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="fw-bold text-dark mb-0">
+                <i class="bi bi-clock-history text-primary me-2"></i> Today's OPD Appointments ({{ today|date:"d M Y" }})
+              </h5>
+              <a href="{% url 'appointments:appointment_list' %}" class="small text-decoration-none fw-bold">View All</a>
+            </div>
+
+            {% if today_appointments %}
+              <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                  <thead class="table-light small">
+                    <tr>
+                      <th>Token</th>
+                      <th>Patient Name</th>
+                      <th>Hospital & Doctor</th>
+                      <th>Slot</th>
+                      <th>Status</th>
+                      <th class="text-end">Slip</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for appt in today_appointments %}
+                      <tr>
+                        <td><span class="badge bg-primary fs-6 px-2 py-1">#{{ appt.token_number }}</span></td>
+                        <td>
+                          <div class="fw-bold text-dark">{{ appt.patient.full_name }}</div>
+                          <small class="text-muted">{{ appt.patient.village }}</small>
+                        </td>
+                        <td>
+                          <div class="fw-semibold">{{ appt.hospital.name|truncatechars:24 }}</div>
+                          <small class="text-muted">Dr. {{ appt.doctor.get_full_name|default:appt.doctor.username }}</small>
+                        </td>
+                        <td><small class="fw-bold">{{ appt.time_slot }}</small></td>
+                        <td><span class="badge {{ appt.status_badge_class }}">{{ appt.get_status_display.split.0 }}</span></td>
+                        <td class="text-end">
+                          <a href="{% url 'appointments:appointment_print' appt.pk %}" class="btn btn-sm btn-outline-primary" target="_blank" title="Print Appointment Slip">
+                            <i class="bi bi-printer"></i>
+                          </a>
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <div class="text-center py-5 text-muted">
+                <i class="bi bi-calendar-x fs-1 text-secondary opacity-50 mb-2"></i>
+                <p class="mb-2">No OPD appointments booked for today.</p>
+                <a href="{% url 'appointments:appointment_book' %}" class="btn btn-sm btn-sc-primary">Book New Token</a>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Upcoming Referrals -->
+        <div class="col-lg-5">
+          <div class="sc-card p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="fw-bold text-dark mb-0">
+                <i class="bi bi-arrow-left-right text-danger me-2"></i> Active Patient Referrals
+              </h5>
+              <a href="{% url 'referrals:referral_list' %}" class="small text-decoration-none fw-bold">View All</a>
+            </div>
+
+            {% if recent_referrals %}
+              <div class="d-flex flex-column gap-3">
+                {% for ref in recent_referrals %}
+                  <div class="p-3 bg-light rounded-3 border">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                      <span class="badge bg-danger-subtle text-danger border border-danger-subtle">{{ ref.referral_code }}</span>
+                      <span class="badge {{ ref.status_badge_class }}">{{ ref.get_status_display.split.0 }}</span>
+                    </div>
+                    <div class="fw-bold text-dark">{{ ref.patient.full_name }}</div>
+                    <div class="small text-muted mb-2">Destination: <strong>{{ ref.to_hospital.name|truncatechars:28 }}</strong></div>
+                    {% if ref.transport_required %}
+                      <div class="small text-danger fw-semibold">
+                        <i class="bi bi-ambulance me-1"></i> Ambulance 108 Status: {{ ref.get_transport_status_display }}
+                      </div>
+                    {% endif %}
+                    <div class="mt-2 text-end">
+                      <a href="{% url 'referrals:referral_detail' ref.pk %}" class="btn btn-sm btn-outline-secondary py-0">View Details</a>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <div class="text-center py-5 text-muted">
+                <i class="bi bi-check2-circle fs-1 text-success opacity-50 mb-2"></i>
+                <p class="mb-0">No active referrals currently pending.</p>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Recently Registered Patients -->
+      <div class="sc-card p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="fw-bold text-dark mb-0"><i class="bi bi-people-fill text-primary me-2"></i> Recently Registered Villagers</h5>
+          <a href="{% url 'patients:patient_list' %}" class="btn btn-sm btn-outline-primary fw-bold">Full Patient Registry</a>
+        </div>
+
+        <div class="row g-3">
+          {% for p in recent_patients %}
+            <div class="col-md-6 col-lg-4">
+              <div class="p-3 bg-light rounded-3 border h-100 d-flex flex-column justify-content-between">
+                <div>
+                  <div class="d-flex justify-content-between mb-1">
+                    <span class="badge bg-white text-muted border small">{{ p.registration_id }}</span>
+                    <span class="badge bg-primary-subtle text-primary">{{ p.gender_display }} / {{ p.age }}y</span>
+                  </div>
+                  <h6 class="fw-bold text-dark mb-1">{{ p.full_name }}</h6>
+                  <p class="small text-muted mb-2"><i class="bi bi-geo-alt me-1"></i> {{ p.village }}, {{ p.block }}</p>
+
+                  {% with v=p.latest_vitals %}
+                    {% if v %}
+                      <div class="p-2 bg-white rounded border small mb-2">
+                        <span class="text-muted">BP:</span> <strong>{{ v.bp_display }}</strong> |
+                        <span class="text-muted">SpO2:</span> <strong>{{ v.spo2|default:"-" }}%</strong> |
+                        <span class="text-muted">Pulse:</span> <strong>{{ v.pulse_rate|default:"-" }}</strong>
+                      </div>
+                    {% endif %}
+                  {% endwith %}
+                </div>
+
+                <div class="d-flex gap-2 pt-2 border-top">
+                  <a href="{% url 'patients:patient_detail' p.pk %}" class="btn btn-sm btn-outline-secondary flex-grow-1">Patient File</a>
+                  <a href="{% url 'appointments:appointment_book' %}?patient_id={{ p.pk }}" class="btn btn-sm btn-sc-primary">Book OPD</a>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

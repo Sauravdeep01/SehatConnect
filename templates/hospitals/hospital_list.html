@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+
+{% block title %}Healthcare Facilities Directory — {{ t.app_name }}{% endblock %}
+
+{% block content %}
+<div class="py-4 bg-primary bg-opacity-10 border-bottom">
+  <div class="container d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div>
+      <h2 class="fw-bold text-dark mb-1">{{ t.nav_hospitals }} (अस्पताल खोजें)</h2>
+      <p class="text-muted small mb-0">Verified Public Health Infrastructure across Districts and Rural Blocks</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{% url 'hospitals:hospital_map' %}" class="btn btn-outline-primary fw-bold">
+        <i class="bi bi-map-fill me-1"></i> Interactive Map View
+      </a>
+      {% if user.is_admin_user %}
+        <a href="{% url 'hospitals:hospital_create' %}" class="btn btn-sc-primary fw-bold">
+          <i class="bi bi-plus-circle me-1"></i> Add Hospital
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="container py-4">
+  <!-- Search and Filters Filter Card -->
+  <div class="sc-card p-4 mb-4">
+    <form method="GET" class="row g-3 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold text-muted">Search Facility / खोजें</label>
+        <div class="input-group">
+          <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+          <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Hospital name, town, block...">
+        </div>
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label small fw-semibold text-muted">District / जिला</label>
+        <select name="district" class="form-select">
+          <option value="">All Districts</option>
+          {% for d in districts %}
+            <option value="{{ d }}" {% if district == d %}selected{% endif %}>{{ d }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label small fw-semibold text-muted">Facility Type / केंद्र प्रकार</label>
+        <select name="facility_type" class="form-select">
+          <option value="">All Levels</option>
+          {% for code, label in facility_types %}
+            <option value="{{ code }}" {% if facility_type == code %}selected{% endif %}>{{ label.split.0 }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold text-muted">Specialty / विशेषज्ञता</label>
+        <select name="specialty" class="form-select">
+          <option value="">All Specialties</option>
+          {% for s in specialties %}
+            <option value="{{ s.id }}" {% if specialty_id == s.id|stringformat:"s" %}selected{% endif %}>{{ s.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-2 d-flex gap-2">
+        <button type="submit" class="btn btn-sc-primary w-100 fw-bold">Filter</button>
+        <a href="{% url 'hospitals:hospital_list' %}" class="btn btn-outline-secondary">Reset</a>
+      </div>
+
+      <div class="col-12 pt-2 d-flex gap-3 align-items-center">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="ambulance" value="1" id="checkAmbulance" {% if ambulance %}checked{% endif %}>
+          <label class="form-check-label small fw-semibold" for="checkAmbulance">
+            <i class="bi bi-ambulance text-danger me-1"></i> Ambulance Available (108)
+          </label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="emergency" value="1" id="checkEmergency" {% if emergency %}checked{% endif %}>
+          <label class="form-check-label small fw-semibold" for="checkEmergency">
+            <i class="bi bi-clock-history text-primary me-1"></i> 24x7 Emergency Services
+          </label>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Hospitals Cards Grid -->
+  {% if page_obj %}
+    <div class="row g-4 mb-4">
+      {% for hospital in page_obj %}
+        <div class="col-md-6 col-lg-4">
+          <div class="sc-card h-100 p-4 d-flex flex-column justify-content-between sc-card-interactive">
+            <div>
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="badge {{ hospital.badge_class }}">{{ hospital.display_type }}</span>
+                {% if hospital.is_verified %}
+                  <span class="text-success small fw-bold"><i class="bi bi-patch-check-fill"></i> Verified</span>
+                {% else %}
+                  <span class="text-warning small fw-bold"><i class="bi bi-clock"></i> Verification Pending</span>
+                {% endif %}
+              </div>
+
+              <h5 class="fw-bold text-dark mb-1">{{ hospital.name }}</h5>
+              <div class="small text-muted mb-3">
+                <i class="bi bi-geo-alt-fill text-danger me-1"></i> {{ hospital.village_town }}, {{ hospital.block }}, {{ hospital.district }}
+              </div>
+
+              <!-- Key Metrics Grid -->
+              <div class="p-3 bg-light rounded-3 mb-3 small">
+                <div class="row g-2 text-center">
+                  <div class="col-4 border-end">
+                    <span class="text-muted d-block">Available</span>
+                    <strong class="text-primary fs-6">{{ hospital.available_beds }}</strong>
+                    <small class="text-muted d-block">/ {{ hospital.total_beds }} beds</small>
+                  </div>
+                  <div class="col-4 border-end">
+                    <span class="text-muted d-block">ICU Beds</span>
+                    <strong class="text-dark fs-6">{{ hospital.icu_beds }}</strong>
+                    <small class="text-muted d-block">capacity</small>
+                  </div>
+                  <div class="col-4">
+                    <span class="text-muted d-block">Ambulance</span>
+                    <strong class="text-success fs-6">{% if hospital.ambulance_available %}Yes (108){% else %}No{% endif %}</strong>
+                    <small class="text-muted d-block">ready</small>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Contact & Specialties -->
+              <div class="mb-3 small">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                  <i class="bi bi-telephone text-primary"></i>
+                  <span>{{ hospital.contact_phone }}</span>
+                  <span class="text-muted">|</span>
+                  <span class="text-danger fw-bold"><i class="bi bi-heart-pulse"></i> 108 Emergency</span>
+                </div>
+              </div>
+
+              <div class="d-flex flex-wrap gap-1 mb-3">
+                {% for s in hospital.specialties.all|slice:":4" %}
+                  <span class="badge bg-white text-muted border small">{{ s.name }}</span>
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="pt-3 border-top d-flex gap-2">
+              <a href="{% url 'hospitals:hospital_detail' hospital.pk %}" class="btn btn-outline-secondary flex-grow-1">
+                {{ t.action_view }}
+              </a>
+              {% if user.is_authenticated and user.role == 'health_worker' %}
+                <a href="{% url 'appointments:appointment_book' %}?hospital_id={{ hospital.pk }}" class="btn btn-sc-primary">
+                  <i class="bi bi-calendar-plus me-1"></i> Book OPD
+                </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+      <div class="d-flex justify-content-between align-items-center p-3 sc-card">
+        <span class="small text-muted">Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ total_count }}</span>
+        <ul class="pagination pagination-sm mb-0">
+          {% if page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&district={{ district }}&facility_type={{ facility_type }}&specialty={{ specialty_id }}">Previous</a></li>
+          {% endif %}
+          <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+          {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}&district={{ district }}&facility_type={{ facility_type }}&specialty={{ specialty_id }}">Next</a></li>
+          {% endif %}
+        </ul>
+      </div>
+    {% endif %}
+  {% else %}
+    <div class="text-center py-5 sc-card text-muted">
+      <i class="bi bi-hospital fs-1 text-secondary opacity-50 mb-2"></i>
+      <h4>No healthcare facilities match your criteria</h4>
+      <p class="small">Try resetting your district or facility type filters.</p>
+      <a href="{% url 'hospitals:hospital_list' %}" class="btn btn-sc-primary">Reset Filters</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

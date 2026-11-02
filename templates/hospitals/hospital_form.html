@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} — {{ t.app_name }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+  {% include 'partials/sidebar.html' %}
+
+  <div class="dashboard-content">
+    <div class="container-fluid max-w-900">
+      <div class="mb-4">
+        <h2 class="fw-bold text-dark mb-1">{{ title }}</h2>
+        <p class="text-muted small">Register or update public health centre parameters and geographic coordinates.</p>
+      </div>
+
+      <div class="sc-card p-4 p-md-5">
+        <form method="POST">
+          {% csrf_token %}
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Facility Name (English) *</label>
+              {{ form.name }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Facility Name (Hindi)</label>
+              {{ form.name_hi }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Facility Type *</label>
+              {{ form.facility_type }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Registration / Health Registry ID *</label>
+              {{ form.registration_number }}
+            </div>
+            <div class="col-12">
+              <label class="form-label small fw-semibold">Complete Address *</label>
+              {{ form.address }}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold">Village / Town *</label>
+              {{ form.village_town }}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold">Block / Tehsil *</label>
+              {{ form.block }}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold">District *</label>
+              {{ form.district }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Latitude (e.g. 23.332300) *</label>
+              {{ form.latitude }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Longitude (e.g. 77.781800) *</label>
+              {{ form.longitude }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Contact Phone *</label>
+              {{ form.contact_phone }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Emergency Phone</label>
+              {{ form.emergency_phone }}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold">Total Beds</label>
+              {{ form.total_beds }}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold">Available Beds</label>
+              {{ form.available_beds }}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold">ICU Beds</label>
+              {{ form.icu_beds }}
+            </div>
+            <div class="col-12">
+              <label class="form-label small fw-semibold">Medical Specialties Offered</label>
+              {{ form.specialties }}
+              <small class="text-muted">Hold Ctrl/Cmd to select multiple specialties.</small>
+            </div>
+            <div class="col-12">
+              <div class="p-3 bg-light rounded-3 border d-flex flex-wrap gap-4">
+                <div class="form-check">
+                  {{ form.is_verified }}
+                  <label class="form-check-label fw-bold" for="id_is_verified">Verified Facility</label>
+                </div>
+                <div class="form-check">
+                  {{ form.ambulance_available }}
+                  <label class="form-check-label" for="id_ambulance_available">Ambulance Available</label>
+                </div>
+                <div class="form-check">
+                  {{ form.emergency_24x7 }}
+                  <label class="form-check-label" for="id_emergency_24x7">24x7 Emergency</label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-end gap-2">
+            <a href="{% url 'hospitals:hospital_list' %}" class="btn btn-outline-secondary">Cancel</a>
+            <button type="submit" class="btn btn-sc-primary px-4 fw-bold">Save Hospital</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

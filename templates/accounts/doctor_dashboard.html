@@ -1,0 +1,252 @@
+{% extends 'base.html' %}
+
+{% block title %}Doctor OPD Command Center — {{ t.app_name }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+  {% include 'partials/sidebar.html' %}
+
+  <div class="dashboard-content">
+    <div class="container-fluid">
+      <!-- Doctor Status Banner -->
+      <div class="sc-card p-4 bg-white border mb-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+          <div class="d-flex align-items-center gap-3">
+            <div class="rounded-circle bg-success text-white p-3 fs-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+              <i class="bi bi-hospital"></i>
+            </div>
+            <div>
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <h3 class="fw-bold text-dark mb-0">Dr. {{ user.get_full_name|default:user.username }}</h3>
+                {% if doctor_profile.is_available %}
+                  <span class="badge bg-success-subtle text-success border border-success-subtle">
+                    <i class="bi bi-check-circle-fill me-1"></i> Available for OPD
+                  </span>
+                {% else %}
+                  <span class="badge bg-warning-subtle text-warning border border-warning-subtle">
+                    <i class="bi bi-pause-circle-fill me-1"></i> On Leave / Off Duty
+                  </span>
+                {% endif %}
+              </div>
+              <p class="text-muted small mb-0">
+                Facility: <strong>{{ hospital.name|default:"Unassigned" }}</strong> | Specialty: <strong>{{ doctor_profile.specialty.name|default:"General Medicine" }}</strong> | Room: <strong>{{ doctor_profile.room_number }}</strong>
+              </p>
+            </div>
+          </div>
+
+          <div class="d-flex gap-2">
+            <a href="{% url 'accounts:toggle_availability' %}" class="btn btn-outline-{% if doctor_profile.is_available %}warning{% else %}success{% endif %} fw-semibold">
+              <i class="bi bi-toggle-{% if doctor_profile.is_available %}on{% else %}off{% endif %} me-1"></i>
+              {% if doctor_profile.is_available %}Mark As On Leave{% else %}Set As Available{% endif %}
+            </a>
+            {% if hospital %}
+              <a href="{% url 'hospitals:hospital_services_update' hospital.pk %}" class="btn btn-sc-primary fw-semibold">
+                <i class="bi bi-hospital me-1"></i> Update Beds & Services
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Stats -->
+      <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-xl-3">
+          <div class="stat-widget">
+            <div class="stat-widget-icon bg-primary-subtle text-primary">
+              <i class="bi bi-person-lines-fill"></i>
+            </div>
+            <div class="stat-widget-value">{{ stats.today_total }}</div>
+            <div class="stat-widget-label">Today's Total OPD</div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+          <div class="stat-widget">
+            <div class="stat-widget-icon bg-warning-subtle text-warning">
+              <i class="bi bi-hourglass-split"></i>
+            </div>
+            <div class="stat-widget-value">{{ stats.today_pending }}</div>
+            <div class="stat-widget-label">Awaiting Consultation</div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+          <div class="stat-widget">
+            <div class="stat-widget-icon bg-success-subtle text-success">
+              <i class="bi bi-check2-all"></i>
+            </div>
+            <div class="stat-widget-value">{{ stats.today_completed }}</div>
+            <div class="stat-widget-label">Completed Consultations</div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+          <div class="stat-widget">
+            <div class="stat-widget-icon bg-danger-subtle text-danger">
+              <i class="bi bi-arrow-left-right"></i>
+            </div>
+            <div class="stat-widget-value">{{ stats.incoming_referrals_count }}</div>
+            <div class="stat-widget-label">Incoming Referrals</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Today's Queue Table -->
+      <div class="sc-card p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <h5 class="fw-bold text-dark mb-0">
+              <i class="bi bi-list-ol text-primary me-2"></i> Today's OPD Patient Queue ({{ today|date:"d M Y" }})
+            </h5>
+            <small class="text-muted">Patients registered and booked by Community Health Workers</small>
+          </div>
+          <span class="badge bg-primary fs-6">Queue: {{ today_queue.count }} Patients</span>
+        </div>
+
+        {% if today_queue %}
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light small">
+                <tr>
+                  <th style="width: 80px;">Token</th>
+                  <th>Patient Name & Village</th>
+                  <th>Time Slot</th>
+                  <th>Chief Complaints / Symptoms</th>
+                  <th>Urgency</th>
+                  <th>Status</th>
+                  <th class="text-end" style="min-width: 200px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for appt in today_queue %}
+                  <tr class="{% if appt.status == 'completed' %}table-light opacity-75{% endif %}">
+                    <td>
+                      <span class="badge bg-primary fs-5 px-3 py-2">#{{ appt.token_number }}</span>
+                    </td>
+                    <td>
+                      <div class="fw-bold text-dark fs-6">{{ appt.patient.full_name }}</div>
+                      <div class="small text-muted">
+                        {{ appt.patient.gender_display }} / {{ appt.patient.age }}y | Village: <strong>{{ appt.patient.village }}</strong>
+                      </div>
+                      <small class="text-secondary"><i class="bi bi-person-heart"></i> Booked by ASHA: {{ appt.booked_by.get_full_name|default:appt.booked_by.username }}</small>
+                    </td>
+                    <td>
+                      <span class="badge bg-light text-dark border">{{ appt.time_slot }}</span>
+                    </td>
+                    <td>
+                      <div class="small text-dark" style="max-width: 280px;">{{ appt.symptoms|truncatechars:90 }}</div>
+                      {% if appt.patient.chronic_conditions %}
+                        <small class="text-danger fw-semibold"><i class="bi bi-exclamation-circle me-1"></i> Chronic: {{ appt.patient.chronic_conditions|truncatechars:40 }}</small>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <span class="badge {{ appt.urgency_badge_class }}">{{ appt.get_urgency_display.split.0 }}</span>
+                    </td>
+                    <td>
+                      <span class="badge {{ appt.status_badge_class }}">{{ appt.get_status_display.split.0 }}</span>
+                    </td>
+                    <td class="text-end">
+                      <div class="btn-group btn-group-sm">
+                        {% if appt.status != 'completed' %}
+                          <a href="{% url 'appointments:appointment_consultation' appt.pk %}" class="btn btn-primary fw-bold" title="Write Prescription & Diagnosis">
+                            <i class="bi bi-pencil-square me-1"></i> Consult
+                          </a>
+                        {% else %}
+                          <a href="{% url 'appointments:appointment_consultation' appt.pk %}" class="btn btn-outline-secondary" title="View Prescription">
+                            <i class="bi bi-check-circle-fill text-success me-1"></i> Prescription
+                          </a>
+                        {% endif %}
+
+                        <a href="{% url 'appointments:appointment_detail' appt.pk %}" class="btn btn-outline-secondary" title="View Dossier">
+                          <i class="bi bi-eye"></i>
+                        </a>
+                        <a href="{% url 'appointments:appointment_print' appt.pk %}" class="btn btn-outline-secondary" target="_blank" title="Print Pass">
+                          <i class="bi bi-printer"></i>
+                        </a>
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="text-center py-5 text-muted">
+            <i class="bi bi-calendar-check fs-1 text-primary opacity-50 mb-2"></i>
+            <p class="mb-0">No patients currently queued for today's OPD.</p>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Incoming Referrals Section -->
+      <div class="sc-card p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <h5 class="fw-bold text-dark mb-0">
+              <i class="bi bi-ambulance text-danger me-2"></i> Incoming Emergency & Specialist Referrals
+            </h5>
+            <small class="text-muted">Cases escalated from Primary Health Centres and village sub-centres</small>
+          </div>
+          <a href="{% url 'referrals:referral_list' %}" class="btn btn-sm btn-outline-primary">All Referrals</a>
+        </div>
+
+        {% if incoming_referrals %}
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light small">
+                <tr>
+                  <th>Referral Code</th>
+                  <th>Patient</th>
+                  <th>Referred From</th>
+                  <th>Clinical Reason & Vitals</th>
+                  <th>Urgency</th>
+                  <th>108 Transit</th>
+                  <th>Status</th>
+                  <th class="text-end">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for ref in incoming_referrals %}
+                  <tr>
+                    <td><span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-bold">{{ ref.referral_code }}</span></td>
+                    <td>
+                      <div class="fw-bold text-dark">{{ ref.patient.full_name }}</div>
+                      <small class="text-muted">{{ ref.patient.gender_display }} / {{ ref.patient.age }}y</small>
+                    </td>
+                    <td>
+                      <div class="small fw-semibold">{{ ref.from_hospital.name|default:"Field Sub-centre"|truncatechars:22 }}</div>
+                    </td>
+                    <td>
+                      <div class="small" style="max-width: 250px;">{{ ref.referral_reason|truncatechars:70 }}</div>
+                    </td>
+                    <td>
+                      <span class="badge {{ ref.urgency_badge_class }}">{{ ref.get_urgency_display.split.0 }}</span>
+                    </td>
+                    <td>
+                      {% if ref.transport_required %}
+                        <span class="badge bg-danger text-white"><i class="bi bi-ambulance me-1"></i> {{ ref.get_transport_status_display }}</span>
+                      {% else %}
+                        <span class="text-muted small">Not needed</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <span class="badge {{ ref.status_badge_class }}">{{ ref.get_status_display.split.0 }}</span>
+                    </td>
+                    <td class="text-end">
+                      <a href="{% url 'referrals:referral_detail' ref.pk %}" class="btn btn-sm btn-outline-primary">
+                        Review & Triage
+                      </a>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="text-center py-4 text-muted">
+            <p class="mb-0">No pending referrals directed to this department.</p>
+          </div>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

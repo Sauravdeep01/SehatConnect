@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+
+{% block title %}OPD Appointments — {{ t.app_name }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+  {% include 'partials/sidebar.html' %}
+
+  <div class="dashboard-content">
+    <div class="container-fluid">
+      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+          <h2 class="fw-bold text-dark mb-1">{{ t.nav_appointments }} (ओपीडी अपॉइंटमेंट)</h2>
+          <p class="text-muted small mb-0">Total Appointments Recorded: <strong>{{ total_count }}</strong></p>
+        </div>
+        {% if user.role == 'health_worker' or user.is_superuser %}
+          <a href="{% url 'appointments:appointment_book' %}" class="btn btn-sc-primary fw-bold shadow-sm">
+            <i class="bi bi-calendar-plus me-1"></i> {{ t.action_book_appointment }}
+          </a>
+        {% endif %}
+      </div>
+
+      <!-- Filters Toolbar -->
+      <div class="sc-card p-4 mb-4">
+        <form method="GET" class="row g-3 align-items-end">
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold text-muted">Search / खोजें</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+              <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Slip #, Patient name, hospital...">
+            </div>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small fw-semibold text-muted">Status / स्थिति</label>
+            <select name="status" class="form-select">
+              <option value="">All Statuses</option>
+              {% for code, label in status_choices %}
+                <option value="{{ code }}" {% if status == code %}selected{% endif %}>{{ label.split.0 }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small fw-semibold text-muted">Urgency / प्राथमिकता</label>
+            <select name="urgency" class="form-select">
+              <option value="">All Urgencies</option>
+              {% for code, label in urgency_choices %}
+                <option value="{{ code }}" {% if urgency == code %}selected{% endif %}>{{ label.split.0 }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small fw-semibold text-muted">Date / दिनांक</label>
+            <input type="date" name="date" value="{{ date_filter }}" class="form-control">
+          </div>
+          <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-sc-primary w-100 fw-bold">Filter</button>
+            <a href="{% url 'appointments:appointment_list' %}" class="btn btn-outline-secondary">Reset</a>
+          </div>
+        </form>
+      </div>
+
+      <!-- Appointments Table -->
+      <div class="sc-card p-0 overflow-hidden mb-4">
+        {% if page_obj %}
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light small">
+                <tr>
+                  <th>Token</th>
+                  <th>Slip Number</th>
+                  <th>Patient & Village</th>
+                  <th>Healthcare Facility</th>
+                  <th>Doctor & Department</th>
+                  <th>Date & Time Slot</th>
+                  <th>Urgency</th>
+                  <th>Status</th>
+                  <th class="text-end" style="min-width: 170px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for a in page_obj %}
+                  <tr>
+                    <td>
+                      <span class="badge bg-primary fs-5 px-3 py-2">#{{ a.token_number }}</span>
+                    </td>
+                    <td>
+                      <span class="fw-bold text-dark small">{{ a.appointment_number }}</span>
+                      <small class="text-muted d-block">{{ a.created_at|date:"d M, H:i" }}</small>
+                    </td>
+                    <td>
+                      <div class="fw-bold text-dark">{{ a.patient.full_name }}</div>
+                      <small class="text-muted">{{ a.patient.village }} | {{ a.patient.gender_display }} / {{ a.patient.age }}y</small>
+                    </td>
+                    <td>
+                      <div class="small fw-semibold">{{ a.hospital.name|truncatechars:25 }}</div>
+                      <span class="badge {{ a.hospital.badge_class }}" style="font-size: 0.65rem;">{{ a.hospital.display_type }}</span>
+                    </td>
+                    <td>
+                      <div class="small fw-bold">Dr. {{ a.doctor.get_full_name|default:a.doctor.username }}</div>
+                      <small class="text-muted">{{ a.doctor.doctor_profile.specialty.name|default:"General Medicine" }}</small>
+                    </td>
+                    <td>
+                      <div class="small fw-bold">{{ a.appointment_date|date:"d M Y" }}</div>
+                      <span class="badge bg-light text-dark border small">{{ a.time_slot }}</span>
+                    </td>
+                    <td>
+                      <span class="badge {{ a.urgency_badge_class }}">{{ a.get_urgency_display.split.0 }}</span>
+                    </td>
+                    <td>
+                      <span class="badge {{ a.status_badge_class }}">{{ a.get_status_display.split.0 }}</span>
+                    </td>
+                    <td class="text-end">
+                      <div class="btn-group btn-group-sm">
+                        <a href="{% url 'appointments:appointment_print' a.pk %}" class="btn btn-outline-secondary" target="_blank" title="Print Slip">
+                          <i class="bi bi-printer"></i>
+                        </a>
+                        <a href="{% url 'appointments:appointment_detail' a.pk %}" class="btn btn-outline-primary" title="Details">
+                          <i class="bi bi-eye"></i>
+                        </a>
+                        {% if user.role == 'doctor' and user == a.doctor and a.status != 'completed' %}
+                          <a href="{% url 'appointments:appointment_consultation' a.pk %}" class="btn btn-primary" title="Consult">
+                            <i class="bi bi-pencil-square"></i>
+                          </a>
+                        {% endif %}
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          {% if page_obj.has_other_pages %}
+            <div class="p-3 border-top d-flex justify-content-between align-items-center">
+              <span class="small text-muted">Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ total_count }}</span>
+              <ul class="pagination pagination-sm mb-0">
+                {% if page_obj.has_previous %}
+                  <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&status={{ status }}&urgency={{ urgency }}&date={{ date_filter }}">Previous</a></li>
+                {% endif %}
+                <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+                {% if page_obj.has_next %}
+                  <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}&status={{ status }}&urgency={{ urgency }}&date={{ date_filter }}">Next</a></li>
+                {% endif %}
+              </ul>
+            </div>
+          {% endif %}
+        {% else %}
+          <div class="text-center py-5 text-muted">
+            <i class="bi bi-calendar-x fs-1 opacity-50 mb-2"></i>
+            <h5>No appointments found</h5>
+            <p class="small">Try adjusting search parameters or book a new appointment.</p>
+            {% if user.role == 'health_worker' or user.is_superuser %}
+              <a href="{% url 'appointments:appointment_book' %}" class="btn btn-sc-primary">Book New Token</a>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
